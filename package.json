@@ -1,0 +1,42 @@
+{
+  "name": "ai-bug-hunter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI Bug Hunter — AI-powered autonomous web application testing and bug intelligence platform (Phase 1: Foundation).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:api dev:web",
+    "dev:api": "npm run dev --workspace @ai-bug-hunter/api",
+    "dev:web": "npm run dev --workspace @ai-bug-hunter/web",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm-run-all --sequential test:node test:web",
+    "test:node": "vitest run",
+    "test:web": "npm run test --workspace @ai-bug-hunter/web",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "@typescript-eslint/parser": "^8.18.1",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "globals": "^15.14.0",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
