@@ -30,7 +30,20 @@
     <div id="result" style="display: none;"></div>
     <div id="delayed" style="display: none;">Delayed content</div>
 
+    <button type="button" id="trigger-console-error" onclick="triggerConsoleError()">
+      Trigger console error
+    </button>
+    <button type="button" id="trigger-page-error" onclick="triggerPageError()">
+      Trigger page error
+    </button>
+    <button type="button" id="trigger-500" onclick="trigger500()">Trigger 500</button>
+    <button type="button" id="trigger-abort" onclick="triggerAbort()">Trigger abort</button>
+    <div id="network-done"></div>
+
     <script>
+      // Emit a benign console.log on load so console-capture tests have deterministic content.
+      console.log('fixture-loaded');
+
       function handleSubmit() {
         var email = document.getElementById('email').value;
         var role = document.getElementById('role').value;
@@ -38,6 +51,36 @@
         r.textContent = 'Submitted: ' + email + ' / ' + role;
         r.style.display = 'block';
         r.id = 'result-success';
+      }
+
+      function triggerConsoleError() {
+        console.error('deliberate-console-error');
+        var m = document.createElement('div');
+        m.id = 'console-error-emitted';
+        m.textContent = 'console error emitted';
+        document.body.appendChild(m);
+      }
+
+      function triggerPageError() {
+        setTimeout(function () {
+          throw new Error('deliberate-page-error');
+        }, 0);
+        var m = document.createElement('div');
+        m.id = 'page-error-scheduled';
+        m.textContent = 'page error scheduled';
+        document.body.appendChild(m);
+      }
+
+      function trigger500() {
+        fetch('/api/error').finally(function () {
+          document.getElementById('network-done').textContent = 'done-500';
+        });
+      }
+
+      function triggerAbort() {
+        fetch('/api/abort').catch(function () {}).finally(function () {
+          document.getElementById('network-done').textContent = 'done-abort';
+        });
       }
 
       document.getElementById('email').addEventListener('keydown', function (e) {

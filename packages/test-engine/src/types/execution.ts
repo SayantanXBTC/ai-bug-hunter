@@ -61,4 +61,5 @@ export interface ExecutionResult {
   durationMs: number;
   steps: StepResult[];
   error?: NormalizedError;
+  evidence?: import('../evidence/evidenceTypes.js').EvidencePackage;
 }

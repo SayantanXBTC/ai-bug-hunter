@@ -103,6 +103,31 @@ Response is an `ExecutionResult` with `status`, per-step timings, and a normaliz
 
 To silence engine logs during tests, set `TEST_ENGINE_QUIET=1`.
 
+## Evidence collection (Phase 3)
+
+When a step fails, the engine automatically attaches an `evidence` package to the returned `ExecutionResult`:
+
+- **screenshot** — base64-encoded PNG (`{mimeType, encoding, data, byteLength, capturedAt}`)
+- **dom** — outer HTML of the failing page, truncated to 512 KB by default
+- **consoleLogs** — messages captured from `page.on('console')` since the start of the test
+- **pageErrors** — uncaught page exceptions (kept separate from console errors)
+- **networkRequests** / **failedRequests** — URL, method, resource type, status, timestamp, failure type (`http | network | aborted`). Request/response bodies are **never** captured.
+- **browser** — `{ name, version, userAgent, viewport, url, title }`
+- **metadata** — truncation flags and counts
+
+Successful runs skip evidence by default. Pass `evidence: { includeEvidenceOnSuccess: true }` to `new TestExecutor(...)` or the API layer to override. Individual sub-options (`screenshotOnFailure`, `captureConsole`, `captureNetwork`, `capturePageErrors`, `captureDomOnFailure`, size caps) are documented on the `EvidenceOptions` type.
+
+### Testing evidence locally
+
+The deterministic fixture (`tests/fixtures/simple-app/index.html`) exposes buttons that trigger:
+
+- `#trigger-console-error` → `console.error('deliberate-console-error')`
+- `#trigger-page-error` → uncaught `throw new Error('deliberate-page-error')`
+- `#trigger-500` → `fetch('/api/error')` returning HTTP 500
+- `#trigger-abort` → `fetch('/api/abort')` where the server destroys the socket
+
+These are served by `startFixtureServer()` over `127.0.0.1:<random port>` so tests remain offline and deterministic.
+
 ## Manual verification
 
 1. `npm run dev`.

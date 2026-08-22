@@ -81,9 +81,45 @@ packages/test-engine/src/
 
 **Public API:** `TestExecutor`, `BrowserManager`, `TestDefinitionSchema`, `TestActionSchema`, `assertSafeUrl`, plus all execution/result types.
 
+## Evidence collection (`packages/test-engine/src/evidence/`) — Phase 3
+
+`EvidenceCollector` is a separate concern that lives alongside `TestExecutor` and never mixes with `ActionExecutor`. `TestExecutor` owns lifecycle:
+
+```
+launch browser
+  → create session
+  → EvidenceCollector.start(page)      # install console/pageerror/network listeners
+  → for each step:
+       execute action
+       on failure → EvidenceCollector.collectFailureEvidence(stepIndex)  # screenshot + DOM
+  → EvidenceCollector.finalize()       # capture browser metadata + detach listeners
+  → session.close()                     # only AFTER finalize
+  → manager.close() (if owned)
+```
+
+**Types (`evidenceTypes.ts`):** `EvidencePackage`, `ScreenshotEvidence`, `DOMEvidence`, `ConsoleEvidence`, `PageErrorEvidence`, `NetworkEvidence`, `NetworkFailureEvidence` (union `http | network | aborted`), `BrowserMetadata`, `EvidenceOptions`. All fields JSON-serializable; no Playwright objects leak.
+
+**Screenshot:** PNG buffer captured via `page.screenshot()`, base64-encoded (`ScreenshotEvidence.data`) with `byteLength`. Default: capture on failure only. Configurable via `screenshotOnFailure` / `screenshotOnSuccess`.
+
+**DOM:** `document.documentElement.outerHTML` captured via `page.evaluate`. Truncated to `maxDomBytes` (default 512 KB) with a `truncated` flag. Skipped if page already closed.
+
+**Console:** `page.on('console')` listener attached in `start()` — before actions run. Type mapped to `log | info | warning | error | debug | other`. Bounded by `maxConsoleMessages` (default 200).
+
+**Page errors:** `page.on('pageerror')` — recorded separately from `console.error` messages so uncaught page exceptions never collapse into console signal.
+
+**Network:** `request` / `response` / `requestfailed` listeners. Captured fields: URL, method, resource type, timestamp, response status. **Request/response bodies, headers, and cookies are never captured** (sensitivity risk). Failure classification: `type: 'http'` for status ≥ 400, `type: 'aborted'` when the failure message mentions abort, else `type: 'network'`. Bounded by `maxNetworkEntries` (default 500).
+
+**Browser metadata:** `{ name, version, userAgent, viewport, url, title }` collected in `finalize()` before listeners detach.
+
+**Persistence:** `EvidenceStore` interface with `InMemoryEvidenceStore` implementation. No filesystem or database storage in Phase 3 — the interface is a seam for a future artifact store (filesystem, S3, PostgreSQL metadata) without touching `TestExecutor`.
+
+**ExecutionResult integration:** `evidence?: EvidencePackage` optional field. Attached automatically when `status !== 'passed'`. On success, evidence is only attached when `includeEvidenceOnSuccess: true`.
+
+**Security / privacy:** By design, the collector never records passwords, tokens, cookies, request bodies, headers, or environment variables. DOM snapshots and screenshots may still contain sensitive rendered content — treated as sensitive artifacts by future storage layers. The engine logs only counts and IDs, never DOM/screenshot payloads.
+
 ## API integration — `POST /api/test-runs`
 
-`apps/api/src/routes/testRuns.ts` validates the request body against `TestDefinitionSchema`, hands it to `new TestExecutor().run(def)`, and returns the resulting `ExecutionResult` JSON. Malformed bodies and unsupported URL schemes yield `400`. No persistence — results are in-memory only.
+`apps/api/src/routes/testRuns.ts` validates the request body against `TestDefinitionSchema`, hands it to `new TestExecutor().run(def)`, and returns the resulting `ExecutionResult` JSON. Malformed bodies and unsupported URL schemes yield `400`. No persistence — results (including any attached `evidence` package with base64 screenshot + truncated DOM) are in-memory only. A dedicated evidence endpoint and artifact store arrive in a later phase.
 
 ## Local test fixture
 
@@ -97,7 +133,8 @@ Capabilities intentionally deferred to later phases:
 - **AI analysis engine** — Claude API integration for reasoning about pages, generating test cases, and analyzing failures. Will attach behind a provider-agnostic interface in front of the test engine.
 - **Bug detection engine** — evaluates test results, screenshots, DOM/network artifacts to identify defects.
 - **Bug intelligence layer** — clustering, deduplication, flaky-test detection, visual regression, and AI root-cause analysis. Backed by dedicated PostgreSQL tables introduced in later phases.
-- **Evidence collection** — screenshots, videos, DOM snapshots, network HAR. Will hook into `TestExecutor` step boundaries in a later phase.
+- **Evidence persistence** — Phase 3 keeps evidence in memory only. Filesystem/object-storage/PostgreSQL-metadata storage attaches to the existing `EvidenceStore` interface in a later phase.
+- **Videos and HAR** — richer artifact types beyond the current screenshot + DOM + console + network metadata.
 - **Reporting and integrations** — historical reports, Jira integration, advanced dashboards.
 - **Additional browsers** — Firefox and WebKit through the existing `BrowserName` union.
 - **Distributed / cloud execution, queues, self-healing selectors.**

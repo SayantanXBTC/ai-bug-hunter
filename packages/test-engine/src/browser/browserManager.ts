@@ -73,6 +73,14 @@ export class BrowserManager {
   isRunning(): boolean {
     return this.browser !== null;
   }
+
+  getName(): BrowserName {
+    return this.browserName;
+  }
+
+  getVersion(): string {
+    return this.browser?.version() ?? 'unknown';
+  }
 }
 
 function describe(err: unknown): string {

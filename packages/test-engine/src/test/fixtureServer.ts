@@ -15,9 +15,24 @@ export interface FixtureServer {
 }
 
 export async function startFixtureServer(): Promise<FixtureServer> {
-  const server: Server = createServer((_req, res) => {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    res.end(FIXTURE_HTML);
+  const server: Server = createServer((req, res) => {
+    const url = req.url ?? '/';
+    if (url === '/' || url === '/index.html') {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.end(FIXTURE_HTML);
+      return;
+    }
+    if (url === '/api/error') {
+      res.writeHead(500, { 'content-type': 'application/json' });
+      res.end('{"error":"boom"}');
+      return;
+    }
+    if (url === '/api/abort') {
+      req.socket.destroy();
+      return;
+    }
+    res.writeHead(404, { 'content-type': 'text/plain' });
+    res.end('not found');
   });
 
   await new Promise<void>((resolvePromise) => {
