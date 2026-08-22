@@ -2,6 +2,7 @@ import express, { type Express } from 'express';
 import cors from 'cors';
 import { env } from './config/env.js';
 import { healthRouter } from './routes/health.js';
+import { testRunsRouter } from './routes/testRuns.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 export function createApp(): Express {
@@ -12,6 +13,7 @@ export function createApp(): Express {
   app.use(express.json({ limit: '1mb' }));
 
   app.use('/api', healthRouter);
+  app.use('/api', testRunsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

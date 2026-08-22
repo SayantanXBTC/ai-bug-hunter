@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./packages/shared" },
+    { "path": "./packages/test-engine" },
     { "path": "./apps/api" },
     { "path": "./apps/web" }
   ]

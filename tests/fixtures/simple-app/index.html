@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AI Bug Hunter Test Fixture</title>
+  </head>
+  <body>
+    <h1 id="heading">AI Bug Hunter Fixture</h1>
+
+    <form id="login-form">
+      <label>
+        Email
+        <input type="text" id="email" name="email" />
+      </label>
+      <label>
+        Password
+        <input type="password" id="password" name="password" />
+      </label>
+      <label>
+        Role
+        <select id="role" name="role">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+          <option value="guest">Guest</option>
+        </select>
+      </label>
+      <button type="button" id="submit-btn" onclick="handleSubmit()">Submit</button>
+    </form>
+
+    <div id="result" style="display: none;"></div>
+    <div id="delayed" style="display: none;">Delayed content</div>
+
+    <script>
+      function handleSubmit() {
+        var email = document.getElementById('email').value;
+        var role = document.getElementById('role').value;
+        var r = document.getElementById('result');
+        r.textContent = 'Submitted: ' + email + ' / ' + role;
+        r.style.display = 'block';
+        r.id = 'result-success';
+      }
+
+      document.getElementById('email').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          var m = document.createElement('div');
+          m.id = 'enter-pressed';
+          m.textContent = 'Enter was pressed';
+          document.body.appendChild(m);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -65,6 +65,44 @@ This installs dependencies for the root, both apps, and the shared package via n
 | `npm run typecheck` | Runs `tsc --noEmit` in every workspace.            |
 | `npm run format`    | Formats the repo with Prettier.                    |
 
+## Playwright / browser setup (Phase 2)
+
+The `@ai-bug-hunter/test-engine` package depends on `playwright`. Browser binaries are downloaded outside `node_modules` (into `%LOCALAPPDATA%\ms-playwright`). Install Chromium after `npm install`:
+
+```powershell
+npx playwright install chromium
+```
+
+Only Chromium is required in Phase 2. Re-run this command after every Playwright upgrade.
+
+## Running a sample test
+
+Start the API:
+
+```powershell
+npm run dev:api
+```
+
+Then trigger a test run via `POST /api/test-runs`:
+
+```powershell
+curl -s -X POST http://localhost:5000/api/test-runs `
+  -H "Content-Type: application/json" `
+  -d '{
+    "id": "sample-1",
+    "name": "sample",
+    "targetUrl": "https://example.com",
+    "steps": [
+      { "action": "navigate", "url": "https://example.com" },
+      { "action": "waitForSelector", "selector": "h1", "timeoutMs": 5000 }
+    ]
+  }'
+```
+
+Response is an `ExecutionResult` with `status`, per-step timings, and a normalized `error` on failure.
+
+To silence engine logs during tests, set `TEST_ENGINE_QUIET=1`.
+
 ## Manual verification
 
 1. `npm run dev`.
