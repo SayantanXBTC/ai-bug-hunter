@@ -16,6 +16,8 @@
     "build": "npm run build --workspaces --if-present",
     "test": "npm-run-all --sequential test:node test:web",
     "test:node": "vitest run",
+    "test:llm:live": "vitest run apps/api/src/ai/providers/anthropicProvider.live.test.ts",
+    "test:e2e:live:minimal": "tsx scripts/e2e/minimalLiveE2E.ts",
     "test:web": "npm run test --workspace @ai-bug-hunter/web",
     "test:watch": "vitest",
     "lint": "eslint .",

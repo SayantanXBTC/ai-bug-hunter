@@ -2,8 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { assertTargetUrlAllowed, TargetUrlError } from './targetUrlPolicy.js';
 
 function expectBlocked(url: string, code: string, opts?: { allowPrivate?: boolean }): void {
+  // Tests assert the "default deny" policy. The runtime default of
+  // env.ALLOW_PRIVATE_TARGETS can be `true` in dev/test environments
+  // (e.g. so the local demo app at http://localhost:4000 is reachable).
+  // Force allowPrivate=false unless a test explicitly overrides it so
+  // the block-list assertions are exercised regardless of ambient env.
+  const effective = { allowPrivate: false, ...(opts ?? {}) };
   try {
-    assertTargetUrlAllowed(url, opts);
+    assertTargetUrlAllowed(url, effective);
     throw new Error(`expected ${url} to be blocked`);
   } catch (err) {
     expect(err).toBeInstanceOf(TargetUrlError);
@@ -100,6 +106,17 @@ describe('assertTargetUrlAllowed', () => {
     expectBlocked('gopher://example.com/', 'blocked_protocol');
     expectBlocked('ws://example.com/', 'blocked_protocol');
     expectBlocked('wss://example.com/', 'blocked_protocol');
+  });
+
+  it('regression: block-list assertions are independent of ambient env.ALLOW_PRIVATE_TARGETS', () => {
+    // Even if the process env has ALLOW_PRIVATE_TARGETS=true, an explicit
+    // allowPrivate=false must still enforce the default-deny policy.
+    expect(() => assertTargetUrlAllowed('http://127.0.0.1/', { allowPrivate: false })).toThrow(
+      TargetUrlError,
+    );
+    expect(() => assertTargetUrlAllowed('http://10.0.0.1/', { allowPrivate: false })).toThrow(
+      TargetUrlError,
+    );
   });
 
   it('allowPrivate=true allows localhost + 127.0.0.1 but STILL blocks file://', () => {
