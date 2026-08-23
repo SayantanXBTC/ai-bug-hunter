@@ -6,18 +6,16 @@ export function PageAmbient(): JSX.Element {
     >
       <div
         className="absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(1200px 600px at 20% -10%, rgba(139,92,246,0.10), transparent 70%), radial-gradient(900px 500px at 90% 10%, rgba(56,189,248,0.06), transparent 70%), #05060B',
-        }}
+        style={{ background: 'var(--ambient-bg)' }}
       />
       <svg
-        className="absolute inset-0 h-full w-full opacity-[0.05]"
+        className="absolute inset-0 h-full w-full"
+        style={{ opacity: 'var(--grid-opacity)' }}
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
           <pattern id="pa-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-            <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#8b5cf6" strokeWidth="0.4" />
+            <path d="M 48 0 L 0 0 0 48" fill="none" stroke="var(--grid-stroke)" strokeWidth="0.4" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#pa-grid)" />
@@ -28,9 +26,9 @@ export function PageAmbient(): JSX.Element {
         preserveAspectRatio="none"
       >
         <g style={{ animation: 'paDrift 90s linear infinite' }}>
-          <circle cx="180" cy="140" r="1.6" fill="#a78bfa" opacity="0.5" />
-          <circle cx="960" cy="220" r="1.4" fill="#38bdf8" opacity="0.4" />
-          <circle cx="740" cy="640" r="1.6" fill="#a78bfa" opacity="0.35" />
+          <circle cx="180" cy="140" r="1.6" fill="var(--primary)" opacity="0.5" />
+          <circle cx="960" cy="220" r="1.4" fill="var(--secondary)" opacity="0.4" />
+          <circle cx="740" cy="640" r="1.6" fill="var(--primary)" opacity="0.35" />
         </g>
         <circle
           cx="600"
@@ -45,8 +43,8 @@ export function PageAmbient(): JSX.Element {
         />
         <defs>
           <linearGradient id="pa-orbit" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#a78bfa" />
-            <stop offset="1" stopColor="#38bdf8" />
+            <stop offset="0" stopColor="var(--primary)" />
+            <stop offset="1" stopColor="var(--secondary)" />
           </linearGradient>
         </defs>
       </svg>

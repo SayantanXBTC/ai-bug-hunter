@@ -3,8 +3,8 @@ import { useTheme, type ThemeMode } from '../../lib/theme.js';
 function SunIcon(): JSX.Element {
   return (
     <svg
-      width={16}
-      height={16}
+      width={12}
+      height={12}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -23,8 +23,8 @@ function SunIcon(): JSX.Element {
 function MoonIcon(): JSX.Element {
   return (
     <svg
-      width={16}
-      height={16}
+      width={12}
+      height={12}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -42,15 +42,34 @@ function MoonIcon(): JSX.Element {
 export function ThemeToggle(): JSX.Element {
   const { theme, toggle } = useTheme();
   const opposite: ThemeMode = theme === 'dark' ? 'light' : 'dark';
+  const isDark = theme === 'dark';
   return (
     <button
       type="button"
       onClick={toggle}
       aria-label={`Switch to ${opposite} mode`}
       title={`Switch to ${opposite} mode`}
-      className="inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--text-muted)] transition-colors hover:text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+      className="relative inline-flex h-8 w-[62px] items-center rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] px-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
     >
-      {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 flex items-center pl-2 text-[var(--text-subtle)]"
+      >
+        <SunIcon />
+      </span>
+      <span
+        aria-hidden
+        className="absolute inset-y-0 right-0 flex items-center pr-2 text-[var(--text-subtle)]"
+      >
+        <MoonIcon />
+      </span>
+      <span
+        aria-hidden
+        className="relative z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)] shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform"
+        style={{ transform: isDark ? 'translateX(30px)' : 'translateX(0px)' }}
+      >
+        {isDark ? <MoonIcon /> : <SunIcon />}
+      </span>
     </button>
   );
 }

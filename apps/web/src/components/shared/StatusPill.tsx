@@ -9,7 +9,7 @@ const TONE: Record<PillTone, string> = {
   running: 'bg-violet-500/10 text-violet-300 border-violet-500/20 sp-pulse',
   skipped: 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20',
   ai: 'bg-violet-500/10 text-violet-300 border-violet-500/20',
-  neutral: 'bg-white/[0.04] text-neutral-300 border-white/10',
+  neutral: 'bg-[var(--surface-hover)] text-[var(--text-muted)] border-[var(--border)]',
 };
 
 const DOT: Record<PillTone, string> = {

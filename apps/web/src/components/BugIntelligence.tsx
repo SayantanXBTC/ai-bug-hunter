@@ -3,6 +3,7 @@ import { PageHeader } from './shared/PageHeader.js';
 import { MetricPanel } from './shared/MetricPanel.js';
 import { StatusPill, type PillTone } from './shared/StatusPill.js';
 import { IconSparkles, IconSpinner, IconXMark, IconExternalLink } from './icons.js';
+import { OrbitalEmptyState } from './shared/OrbitalEmptyState.js';
 import { formatRelativeTime } from '../lib/format.js';
 
 interface BugCluster {
@@ -160,7 +161,7 @@ export function BugIntelligence(): JSX.Element {
         </div>
       )}
       {summary && (
-        <div className="rounded-md border border-white/[0.06] bg-black/20 px-3 py-2 text-xs text-neutral-400">
+        <div className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-muted)]">
           Analyzed {summary.analyzedRuns} runs · {summary.candidatePairs} candidate pairs ·{' '}
           {summary.deterministicStrongPairs} deterministic strong · {summary.aiComparisons} AI comparisons ·{' '}
           {summary.clustersCreated} created · {summary.clustersUpdated} updated · {summary.durationMs}ms
@@ -175,7 +176,7 @@ export function BugIntelligence(): JSX.Element {
         <MetricPanel index={4} label="Inconclusive" value={counts.inconclusive ?? 0} accent="neutral" />
       </div>
 
-      <div className="rounded-xl border border-violet-500/25 bg-[rgba(12,14,22,0.65)] p-4 backdrop-blur-md">
+      <div className="rounded-xl border border-violet-500/25 bg-[var(--surface-glass)] p-4 backdrop-blur-md">
         <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.25em] text-violet-300">
           <IconSparkles size={12} /> AI INVESTIGATION ENGINE
         </div>
@@ -196,18 +197,17 @@ export function BugIntelligence(): JSX.Element {
       {loading ? (
         <div className="grid gap-3 md:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-40 animate-pulse rounded-xl bg-white/[0.03]" />
+            <div key={i} className="h-40 animate-pulse rounded-xl bg-[var(--surface-hover)]" />
           ))}
         </div>
       ) : !clusters || clusters.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-10 text-center">
-          <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
-            NO ACTIVE INCIDENTS
-          </div>
-          <div className="mt-2 text-sm text-neutral-400">
-            The intelligence engine has not identified any unresolved clusters.
-          </div>
-        </div>
+        <OrbitalEmptyState
+          visualization="constellation"
+          accent="violet"
+          title="No bugs detected"
+          subtitle="AI Bug Intelligence will surface recurring failures as your test history grows."
+          cta={{ label: 'Analyze Failures', onClick: analyze, icon: <IconSparkles size={14} /> }}
+        />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {clusters.map((c) => (
@@ -224,10 +224,10 @@ export function BugIntelligence(): JSX.Element {
 function MetaCell({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div>
-      <dt className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+      <dt className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
         {label}
       </dt>
-      <dd className="mt-1 truncate text-white/90">{value}</dd>
+      <dd className="mt-1 truncate text-[var(--text)]">{value}</dd>
     </div>
   );
 }
@@ -239,7 +239,7 @@ function ClusterCard({ c, onOpen }: { c: BugCluster; onOpen: () => void }): JSX.
     <button
       type="button"
       onClick={onOpen}
-      className="group flex w-full flex-col rounded-xl border border-white/[0.06] bg-[rgba(12,14,22,0.65)] p-4 text-left backdrop-blur-md transition-colors hover:border-violet-500/30 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+      className="group flex w-full flex-col rounded-xl border border-[var(--border)] bg-[var(--surface-glass)] p-4 text-left backdrop-blur-md transition-colors hover:border-violet-500/30 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
@@ -247,19 +247,19 @@ function ClusterCard({ c, onOpen }: { c: BugCluster; onOpen: () => void }): JSX.
             aria-hidden
             className={`h-2 w-2 shrink-0 rounded-full ${SEVERITY_DOT[c.severity] ?? 'bg-neutral-600'}`}
           />
-          <div className="truncate text-sm font-medium text-white/90">{c.title}</div>
+          <div className="truncate text-sm font-medium text-[var(--text)]">{c.title}</div>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-1.5">
           <StatusPill tone={sevTone}>{c.severity}</StatusPill>
           <StatusPill tone={statTone}>{c.status}</StatusPill>
         </div>
       </div>
-      <div className="mt-3 text-[10px] font-medium uppercase tracking-[0.2em] text-neutral-500 tabular-nums">
+      <div className="mt-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--text-subtle)] tabular-nums">
         {c.occurrenceCount} OCCURRENCES · {c.affectedTestCount} TESTS · {c.affectedPageCount} PAGE
         {c.affectedPageCount === 1 ? '' : 'S'} · {Math.round(c.confidence * 100)}% CONF
       </div>
       <MiniTimeline first={c.firstSeenAt} last={c.lastSeenAt} count={c.occurrenceCount} />
-      <div className="mt-3 flex items-center justify-between text-xs text-neutral-500 group-hover:text-violet-300">
+      <div className="mt-3 flex items-center justify-between text-xs text-[var(--text-subtle)] group-hover:text-violet-300">
         <span>View investigation</span>
         <IconExternalLink size={12} />
       </div>
@@ -291,7 +291,7 @@ function MiniTimeline({
         ))}
         <span className="absolute right-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-cyan-400" />
       </div>
-      <div className="mt-1 flex justify-between text-[10px] uppercase tracking-widest text-neutral-600">
+      <div className="mt-1 flex justify-between text-[10px] uppercase tracking-widest text-[var(--text-subtle)]">
         <span>{formatRelativeTime(first)}</span>
         <span>{formatRelativeTime(last)}</span>
       </div>
@@ -359,7 +359,7 @@ function ClusterModal({
       onClick={onClose}
     >
       <div
-        className="mt-8 w-full max-w-3xl rounded-xl border border-violet-500/25 bg-[rgba(12,14,22,0.95)] p-6 shadow-2xl"
+        className="mt-8 w-full max-w-3xl rounded-xl border border-violet-500/25 bg-[var(--surface)] p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -367,8 +367,8 @@ function ClusterModal({
             <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-violet-300">
               CLUSTER INVESTIGATION
             </div>
-            <h2 className="mt-1 truncate text-lg font-semibold text-white/90">{cluster.title}</h2>
-            <div className="mt-1 text-[10px] uppercase tracking-widest text-neutral-500 tabular-nums">
+            <h2 className="mt-1 truncate text-lg font-semibold text-[var(--text)]">{cluster.title}</h2>
+            <div className="mt-1 text-[10px] uppercase tracking-widest text-[var(--text-subtle)] tabular-nums">
               {cluster.occurrenceCount} OCCURRENCES · {cluster.affectedTestCount} TESTS ·{' '}
               {Math.round(cluster.confidence * 100)}% CONFIDENCE
             </div>
@@ -376,7 +376,7 @@ function ClusterModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-neutral-400 hover:bg-white/[0.05] hover:text-white/90 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+            className="rounded p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-violet-500/40"
             aria-label="Close"
           >
             <IconXMark size={16} />
@@ -387,7 +387,7 @@ function ClusterModal({
 
         <div className="mt-5 space-y-5 text-sm">
           <section>
-            <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+            <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
               AI CLASSIFICATION
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -396,10 +396,10 @@ function ClusterModal({
               <MetaCell label="Regression" value={cluster.regressionStatus} />
             </div>
             <div className="mt-3">
-              <div className="text-[10px] uppercase tracking-widest text-neutral-500">
+              <div className="text-[10px] uppercase tracking-widest text-[var(--text-subtle)]">
                 Confidence
               </div>
-              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.05]">
+              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-hover)]">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-400"
                   style={{ width: `${Math.round(cluster.confidence * 100)}%` }}
@@ -410,10 +410,10 @@ function ClusterModal({
 
           {cluster.primaryFailureSignature && (
             <section>
-              <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+              <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
                 FAILURE SIGNATURE
               </div>
-              <div className="mt-2 break-all rounded-md border border-white/[0.06] bg-black/40 p-2 font-mono text-xs text-neutral-300">
+              <div className="mt-2 break-all rounded-md border border-[var(--border)] bg-[var(--surface)] p-2 font-mono text-xs text-[var(--text-muted)]">
                 {cluster.primaryFailureSignature}
               </div>
             </section>
@@ -421,29 +421,29 @@ function ClusterModal({
 
           {cluster.rootCauseSummary && (
             <section>
-              <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+              <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
                 ROOT CAUSE (PRIMARY INVESTIGATION)
               </div>
-              <div className="mt-2 text-neutral-200">{cluster.rootCauseSummary}</div>
+              <div className="mt-2 text-[var(--text)]">{cluster.rootCauseSummary}</div>
             </section>
           )}
 
           {data && data.members.length > 0 && (
             <section>
-              <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+              <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
                 MEMBERS ({data.members.length})
               </div>
               <ul className="mt-2 space-y-1 text-xs">
                 {data.members.map((m) => (
                   <li
                     key={m.testRunId}
-                    className="flex items-center justify-between border-b border-white/[0.04] py-1.5"
+                    className="flex items-center justify-between border-b border-[var(--border)] py-1.5"
                   >
-                    <span className="truncate text-neutral-300">
+                    <span className="truncate text-[var(--text-muted)]">
                       {m.run?.testName ?? m.testRunId}
-                      {m.run && <span className="ml-2 text-neutral-500">· {m.run.status}</span>}
+                      {m.run && <span className="ml-2 text-[var(--text-subtle)]">· {m.run.status}</span>}
                     </span>
-                    <span className="tabular-nums text-neutral-500">
+                    <span className="tabular-nums text-[var(--text-subtle)]">
                       {Math.round(m.similarityScore * 100)}%
                     </span>
                   </li>
@@ -454,17 +454,17 @@ function ClusterModal({
 
           {data && data.timeline.length > 0 && (
             <section>
-              <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+              <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
                 TIMELINE
               </div>
-              <ol className="mt-2 space-y-0.5 text-xs text-neutral-400">
+              <ol className="mt-2 space-y-0.5 text-xs text-[var(--text-muted)]">
                 {data.timeline.map((t, i) => (
                   <li key={`${t.testRunId}-${i}`} className="flex gap-3">
-                    <span className="tabular-nums text-neutral-600">
+                    <span className="tabular-nums text-[var(--text-subtle)]">
                       {new Date(t.at).toLocaleString()}
                     </span>
                     <span>
-                      → {t.kind} · <span className="text-neutral-300">{t.status}</span>
+                      → {t.kind} · <span className="text-[var(--text-muted)]">{t.status}</span>
                     </span>
                   </li>
                 ))}

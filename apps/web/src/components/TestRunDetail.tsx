@@ -66,7 +66,7 @@ export function TestRunDetail({ id, onClose }: Props): JSX.Element {
   }
   if (!data) {
     return (
-      <div className="rounded-xl border border-white/[0.06] bg-[rgba(12,14,22,0.65)] p-6 text-sm text-neutral-400">
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-glass)] p-6 text-sm text-[var(--text-muted)]">
         Loading execution trace…
       </div>
     );
@@ -80,20 +80,20 @@ export function TestRunDetail({ id, onClose }: Props): JSX.Element {
       <button
         type="button"
         onClick={onClose}
-        className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white/90 focus:outline-none focus:ring-2 focus:ring-violet-500/40 rounded"
+        className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-violet-500/40 rounded"
       >
         <IconArrowLeft size={14} /> Back to runs
       </button>
 
-      <div className="rounded-xl border border-white/[0.06] bg-[rgba(12,14,22,0.65)] p-5 backdrop-blur-md">
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-glass)] p-5 backdrop-blur-md">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+            <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
               EXECUTION TRACE
             </div>
-            <h2 className="mt-1 text-lg font-semibold text-white/90 truncate">{data.testName}</h2>
+            <h2 className="mt-1 text-lg font-semibold text-[var(--text)] truncate">{data.testName}</h2>
             <div
-              className="mt-1 font-mono text-[11px] text-neutral-500 truncate hover:text-neutral-300"
+              className="mt-1 font-mono text-[11px] text-[var(--text-subtle)] truncate hover:text-[var(--text-muted)]"
               title={data.id}
             >
               {data.id}
@@ -101,10 +101,10 @@ export function TestRunDetail({ id, onClose }: Props): JSX.Element {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill tone={tone}>{data.status}</StatusPill>
-            <span className="rounded-md border border-white/[0.06] bg-black/30 px-2 py-1 text-xs tabular-nums text-neutral-300">
+            <span className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs tabular-nums text-[var(--text-muted)]">
               {formatDuration(data.durationMs)}
             </span>
-            <span className="rounded-md border border-white/[0.06] bg-black/30 px-2 py-1 text-xs text-neutral-400">
+            <span className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-muted)]">
               {formatRelativeTime(data.startedAt)}
             </span>
           </div>
@@ -130,17 +130,17 @@ export function TestRunDetail({ id, onClose }: Props): JSX.Element {
         </div>
       )}
 
-      <div className="rounded-xl border border-white/[0.06] bg-[rgba(12,14,22,0.65)] p-5 backdrop-blur-md">
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-glass)] p-5 backdrop-blur-md">
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+          <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
             EXECUTION TRACE
           </div>
-          <div className="text-[10px] uppercase tracking-widest text-neutral-600 tabular-nums">
+          <div className="text-[10px] uppercase tracking-widest text-[var(--text-subtle)] tabular-nums">
             {data.steps.length} STEP{data.steps.length === 1 ? '' : 'S'}
           </div>
         </div>
         {data.steps.length === 0 ? (
-          <div className="text-sm text-neutral-500">— No steps recorded</div>
+          <div className="text-sm text-[var(--text-subtle)]">— No steps recorded</div>
         ) : (
           <ol className="space-y-1">
             {data.steps.map((s) => (
@@ -150,17 +150,17 @@ export function TestRunDetail({ id, onClose }: Props): JSX.Element {
         )}
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-[rgba(12,14,22,0.65)] p-5 backdrop-blur-md">
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-glass)] p-5 backdrop-blur-md">
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+          <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
             EVIDENCE
           </div>
-          <div className="text-[10px] uppercase tracking-widest text-neutral-600 tabular-nums">
+          <div className="text-[10px] uppercase tracking-widest text-[var(--text-subtle)] tabular-nums">
             {data.evidence.length} ARTIFACT{data.evidence.length === 1 ? '' : 'S'}
           </div>
         </div>
         {data.evidence.length === 0 ? (
-          <div className="text-sm text-neutral-500">— No evidence captured</div>
+          <div className="text-sm text-[var(--text-subtle)]">— No evidence captured</div>
         ) : (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
             {data.evidence.map((e) => (
@@ -189,7 +189,7 @@ function StepRow({
     ) : step.status === 'failed' ? (
       <IconX size={12} className="text-red-400" />
     ) : (
-      <span className="text-neutral-600">—</span>
+      <span className="text-[var(--text-subtle)]">—</span>
     );
 
   const meta = (step as StepDetail & { target?: string; url?: string; selector?: string });
@@ -200,26 +200,26 @@ function StepRow({
       className={`rounded-md border px-3 py-2 transition-colors ${
         isFailing
           ? 'border-red-500/25 bg-red-500/[0.05]'
-          : 'border-white/[0.04] bg-black/20 hover:border-white/[0.08]'
+          : 'border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)]'
       }`}
     >
       <div className="flex items-center gap-3">
-        <span className="rounded bg-white/[0.04] px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-neutral-400">
+        <span className="rounded bg-[var(--surface-hover)] px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-[var(--text-muted)]">
           {String(step.index).padStart(2, '0')}
         </span>
         <span className="w-4 shrink-0 text-center">{glyph}</span>
-        <span className="text-sm font-medium text-white/90">{labelFor(step.action)}</span>
+        <span className="text-sm font-medium text-[var(--text)]">{labelFor(step.action)}</span>
         {target && (
-          <span className="truncate font-mono text-[11px] text-neutral-500" title={target}>
+          <span className="truncate font-mono text-[11px] text-[var(--text-subtle)]" title={target}>
             {target}
           </span>
         )}
-        <span className="ml-auto tabular-nums text-[11px] text-neutral-500">
+        <span className="ml-auto tabular-nums text-[11px] text-[var(--text-subtle)]">
           {formatDuration(step.durationMs)}
         </span>
       </div>
       {isFailing && step.error?.message && (
-        <div className="mt-2 rounded border border-red-500/20 bg-black/30 p-2 text-xs text-red-200/90">
+        <div className="mt-2 rounded border border-red-500/20 bg-[var(--surface)] p-2 text-xs text-red-200/90">
           <span className="font-mono">{step.error.name ?? 'Error'}:</span> {step.error.message}
         </div>
       )}
@@ -236,10 +236,10 @@ function EvidenceCard({ e }: { e: EvidenceDetail }): JSX.Element {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="group flex flex-col overflow-hidden rounded-lg border border-white/[0.06] bg-black/30 transition-colors hover:border-violet-500/30 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+      className="group flex flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] transition-colors hover:border-violet-500/30 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
     >
       {isImage && (
-        <div className="aspect-video overflow-hidden bg-black/50">
+        <div className="aspect-video overflow-hidden bg-[var(--surface-elevated)]">
           <img
             src={href}
             alt=""
@@ -253,17 +253,17 @@ function EvidenceCard({ e }: { e: EvidenceDetail }): JSX.Element {
       )}
       <div className="flex items-center justify-between gap-2 p-3">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-neutral-400">{icon}</span>
+          <span className="text-[var(--text-muted)]">{icon}</span>
           <div className="min-w-0">
-            <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-neutral-500 truncate">
+            <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--text-subtle)] truncate">
               {e.type.replace(/_/g, ' ')}
             </div>
-            <div className="text-[11px] tabular-nums text-neutral-500">
+            <div className="text-[11px] tabular-nums text-[var(--text-subtle)]">
               {e.byteSize ? `${(e.byteSize / 1024).toFixed(1)} KB` : '—'}
             </div>
           </div>
         </div>
-        <span className="text-neutral-500 group-hover:text-violet-300">
+        <span className="text-[var(--text-subtle)] group-hover:text-violet-300">
           <IconExternalLink size={12} />
         </span>
       </div>

@@ -98,11 +98,11 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
   const lastDate = trend?.buckets[trend.buckets.length - 1]?.startIso.slice(0, 10);
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+    <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold tracking-tight text-neutral-900">Quality Trend</h2>
-          <p className="text-xs text-neutral-500">Historical view of key quality signals.</p>
+          <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">Quality Trend</h2>
+          <p className="text-xs text-[var(--text-muted)]">Historical view of key quality signals.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="sr-only" htmlFor="trend-metric">Metric</label>
@@ -110,13 +110,13 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
             id="trend-metric"
             value={metric}
             onChange={(e) => setMetric(e.target.value as TrendMetric)}
-            className="rounded border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+            className="rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-sm text-[var(--text)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
           >
             {METRIC_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
-          <div role="group" aria-label="Time window" className="inline-flex overflow-hidden rounded border border-neutral-300">
+          <div role="group" aria-label="Time window" className="inline-flex overflow-hidden rounded border border-[var(--border)]">
             {WINDOWS.map((w) => (
               <button
                 key={w}
@@ -125,8 +125,8 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
                 aria-pressed={window === w}
                 className={`px-2.5 py-1 text-xs font-medium tabular-nums ${
                   window === w
-                    ? 'bg-neutral-900 text-white'
-                    : 'bg-white text-neutral-600 hover:bg-neutral-50'
+                    ? 'bg-[var(--primary)] text-white'
+                    : 'bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-hover)]'
                 }`}
               >
                 {w}
@@ -138,7 +138,7 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
 
       <div className="relative mt-4 h-[280px]">
         {loading && (
-          <div className="flex h-full items-center justify-center text-sm text-neutral-400">
+          <div className="flex h-full items-center justify-center text-sm text-[var(--text-subtle)]">
             Loading trend…
           </div>
         )}
@@ -148,7 +148,7 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
           </div>
         )}
         {!loading && !error && trend && (trend.insufficient || !chart) && (
-          <div className="flex h-full items-center justify-center text-sm text-neutral-500">
+          <div className="flex h-full items-center justify-center text-sm text-[var(--text-muted)]">
             Not enough historical data yet.
           </div>
         )}
@@ -228,7 +228,7 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
             {hoverIdx !== null && chart.points[hoverIdx] && (
               <div
                 role="tooltip"
-                className="pointer-events-none absolute z-10 rounded border border-neutral-200 bg-white px-2 py-1 text-xs text-neutral-700 shadow-sm"
+                className="pointer-events-none absolute z-10 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text)] shadow-[var(--shadow)]"
                 style={{
                   left: `calc(${(chart.points[hoverIdx]!.x / chart.width) * 100}% + 8px)`,
                   top: `calc(${(chart.points[hoverIdx]!.y / chart.height) * 100}% - 8px)`,
@@ -237,7 +237,7 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
                 <div className="font-medium tabular-nums">
                   {formatYValue(metric, chart.points[hoverIdx]!.value)}
                 </div>
-                <div className="text-neutral-500">
+                <div className="text-[var(--text-muted)]">
                   {chart.points[hoverIdx]!.startIso.slice(0, 10)}
                 </div>
               </div>

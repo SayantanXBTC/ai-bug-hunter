@@ -21,9 +21,9 @@ export function QuickActions({
   ];
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-      <h2 className="text-base font-semibold tracking-tight text-neutral-900">Quick Actions</h2>
-      <p className="mt-0.5 text-xs text-neutral-500">
+    <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
+      <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">Quick Actions</h2>
+      <p className="mt-0.5 text-xs text-[var(--text-muted)]">
         {canWrite ? 'Jump into a common workflow.' : 'Read-only role — actions disabled.'}
       </p>
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -33,7 +33,7 @@ export function QuickActions({
             type="button"
             disabled={!canWrite}
             onClick={a.onClick}
-            className="rounded border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-400 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
+            className="rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)] disabled:cursor-not-allowed disabled:bg-[var(--surface-hover)] disabled:text-[var(--text-subtle)]"
           >
             {a.label}
           </button>

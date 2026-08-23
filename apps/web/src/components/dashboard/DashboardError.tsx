@@ -10,7 +10,7 @@ export function DashboardError({ message, requestId, onRetry }: DashboardErrorPr
   return (
     <div
       role="alert"
-      className="rounded-lg border border-red-200 bg-red-50 p-5 text-red-700 shadow-sm"
+      className="rounded-lg border border-red-200 bg-red-50 p-5 text-red-700 shadow-[var(--shadow)]"
     >
       <div className="flex items-start gap-3">
         <IconAlertTriangle size={20} className="mt-0.5 shrink-0" />
@@ -24,7 +24,7 @@ export function DashboardError({ message, requestId, onRetry }: DashboardErrorPr
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex items-center gap-1.5 rounded border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-400"
+          className="inline-flex items-center gap-1.5 rounded border border-red-300 bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-400"
         >
           <IconRefresh size={14} />
           Retry

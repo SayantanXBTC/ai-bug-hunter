@@ -15,8 +15,6 @@ import { TopBar } from './components/shared/TopBar.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useTheme } from './lib/theme.js';
 
-const DARK_VIEWS: ReadonlySet<ViewId> = new Set(['test-runs', 'bugs', 'reliability']);
-
 export function App(): JSX.Element {
   const auth = useAuth();
   // Ensure the theme attribute is applied globally.
@@ -25,17 +23,16 @@ export function App(): JSX.Element {
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
   if (auth.loading) {
-    return <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">Loading…</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-[var(--bg)] text-[var(--text-muted)]">Loading…</div>;
   }
   if (!auth.user) {
     return <LoginView onAuthenticated={() => void auth.refresh()} />;
   }
 
   const role = auth.user.role;
-  const isDark = DARK_VIEWS.has(view);
 
   return (
-    <div className={`flex min-h-screen ${isDark ? 'bg-[#05060B] text-white/90' : 'bg-[var(--bg)] text-[var(--text)]'}`}>
+    <div className="flex min-h-screen bg-[var(--bg)] text-[var(--text)]">
       <Sidebar active={view} onNavigate={setView} role={role} />
       <div className="flex flex-1 flex-col">
         <TopBar user={auth.user} onLogout={() => void auth.logout()} />

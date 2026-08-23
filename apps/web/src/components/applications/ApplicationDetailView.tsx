@@ -97,7 +97,7 @@ export function ApplicationDetailView({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-1 rounded px-2 py-1 text-sm text-neutral-600 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+          className="inline-flex items-center gap-1 rounded px-2 py-1 text-sm text-[var(--text-muted)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
         >
           <IconArrowLeft size={14} />
           Back to Applications
@@ -107,20 +107,20 @@ export function ApplicationDetailView({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="truncate text-2xl font-semibold tracking-tight text-neutral-900">{application.name}</h1>
+            <h1 className="truncate text-2xl font-semibold tracking-tight text-[var(--text)]">{application.name}</h1>
             <StatusPill discovered={Boolean(discovery)} />
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-sm text-neutral-500">
+          <div className="mt-1 flex items-center gap-1.5 text-sm text-[var(--text-muted)]">
             <IconGlobe size={14} />
             <a
               href={application.base_url}
               target="_blank"
               rel="noreferrer noopener"
-              className="truncate font-mono text-xs text-neutral-600 hover:text-neutral-900"
+              className="truncate font-mono text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
             >
               {application.base_url}
             </a>
-            <IconExternalLink size={12} className="text-neutral-400" />
+            <IconExternalLink size={12} className="text-[var(--text-subtle)]" />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -129,7 +129,7 @@ export function ApplicationDetailView({
               <button
                 type="button"
                 onClick={() => setPanelOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                className="inline-flex items-center gap-1.5 rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
               >
                 <IconRefresh size={14} />
                 {discovery ? 'Re-discover' : 'Discover'}
@@ -151,7 +151,7 @@ export function ApplicationDetailView({
                 setDeleteError(null);
                 setConfirmOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400"
+              className="inline-flex items-center gap-1.5 rounded border border-red-300 bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400"
               aria-label="Delete application"
             >
               <IconTrash size={14} />
@@ -168,11 +168,11 @@ export function ApplicationDetailView({
           aria-label="Confirm delete application"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
         >
-          <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-lg">
-            <h2 className="text-base font-semibold text-neutral-900">
+          <div className="w-full max-w-md rounded-lg bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
+            <h2 className="text-base font-semibold text-[var(--text)]">
               Delete &quot;{application.name}&quot;?
             </h2>
-            <p className="mt-2 text-sm text-neutral-600">
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
               This will permanently remove the application. Any associated test cases and
               test runs must be deleted first — if children exist, the API will refuse the
               request. This action cannot be undone.
@@ -190,7 +190,7 @@ export function ApplicationDetailView({
                 type="button"
                 onClick={() => setConfirmOpen(false)}
                 disabled={deleting}
-                className="rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                className="rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -208,7 +208,7 @@ export function ApplicationDetailView({
       )}
 
       {/* Tabs */}
-      <div className="border-b border-neutral-200">
+      <div className="border-b border-[var(--border)]">
         <nav role="tablist" aria-label="Application detail sections" className="-mb-px flex flex-wrap gap-1">
           {TABS.map((t) => {
             const active = tab === t.id;
@@ -219,10 +219,10 @@ export function ApplicationDetailView({
                 aria-selected={active}
                 type="button"
                 onClick={() => setTab(t.id)}
-                className={`border-b-2 px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-neutral-400 ${
+                className={`border-b-2 px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)] ${
                   active
-                    ? 'border-neutral-900 text-neutral-900'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-800'
+                    ? 'border-neutral-900 text-[var(--text)]'
+                    : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text)]'
                 }`}
               >
                 {t.label}
@@ -260,7 +260,7 @@ function StatusPill({ discovered }: { discovered: boolean }): JSX.Element {
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-xs font-medium text-neutral-600">
+    <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface-hover)] px-2 py-0.5 text-xs font-medium text-[var(--text-muted)]">
       Ready
     </span>
   );
@@ -277,19 +277,19 @@ function OverviewTab({
 }): JSX.Element {
   if (!discovery) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center shadow-sm">
-        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-500">
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-[var(--shadow)]">
+        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-hover)] text-[var(--text-muted)]">
           <IconLayers size={18} />
         </div>
-        <h3 className="mt-3 text-sm font-semibold text-neutral-900">Application not discovered yet.</h3>
-        <p className="mt-1 text-sm text-neutral-500">
+        <h3 className="mt-3 text-sm font-semibold text-[var(--text)]">Application not discovered yet.</h3>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
           Run discovery to build a structured application model.
         </p>
         {canDiscover && (
           <button
             type="button"
             onClick={onDiscover}
-            className="mt-4 inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+            className="mt-4 inline-flex items-center gap-1.5 rounded bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
           >
             <IconRefresh size={14} />
             Discover
@@ -314,16 +314,16 @@ function OverviewTab({
 
 function MetricCard({ label, value }: { label: string; value: string }): JSX.Element {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-      <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">{label}</div>
-      <div className="mt-2 text-2xl font-semibold tabular-nums text-neutral-900">{value}</div>
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
+      <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">{label}</div>
+      <div className="mt-2 text-2xl font-semibold tabular-nums text-[var(--text)]">{value}</div>
     </div>
   );
 }
 
 function EmptyDiscoveryNotice(): JSX.Element {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-6 text-center text-sm text-neutral-500 shadow-sm">
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-6 text-center text-sm text-[var(--text-muted)] shadow-[var(--shadow)]">
       Run discovery to populate this section.
     </div>
   );
@@ -334,11 +334,11 @@ function PagesTab({ discovery }: { discovery: DiscoveryResult | null }): JSX.Ele
   if (!discovery) return <EmptyDiscoveryNotice />;
   const pages = discovery.application.pages;
   if (pages.length === 0) {
-    return <div className="rounded-lg border border-neutral-200 bg-white p-6 text-sm text-neutral-500">No pages found.</div>;
+    return <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)]">No pages found.</div>;
   }
   return (
-    <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm">
-      <ul className="divide-y divide-neutral-200">
+    <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
+      <ul className="divide-y divide-[var(--border)]">
         {pages.map((p, i) => {
           const isOpen = expanded === i;
           return (
@@ -347,16 +347,16 @@ function PagesTab({ discovery }: { discovery: DiscoveryResult | null }): JSX.Ele
                 type="button"
                 onClick={() => setExpanded(isOpen ? null : i)}
                 aria-expanded={isOpen}
-                className="flex w-full items-center justify-between gap-4 px-5 py-3 text-left hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-neutral-400"
+                className="flex w-full items-center justify-between gap-4 px-5 py-3 text-left hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-inset focus-visible:ring-[var(--primary)]"
               >
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-neutral-900">{p.title || p.path || p.url}</div>
-                  <div className="mt-0.5 truncate font-mono text-xs text-neutral-500">{p.path || p.url}</div>
+                  <div className="truncate text-sm font-medium text-[var(--text)]">{p.title || p.path || p.url}</div>
+                  <div className="mt-0.5 truncate font-mono text-xs text-[var(--text-muted)]">{p.path || p.url}</div>
                 </div>
-                <div className="flex shrink-0 items-center gap-3 text-xs text-neutral-500">
-                  <span className="tabular-nums"><span className="font-medium text-neutral-700">{p.elements.length}</span> elements</span>
-                  <span className="tabular-nums"><span className="font-medium text-neutral-700">{p.forms.length}</span> forms</span>
-                  <span className="tabular-nums"><span className="font-medium text-neutral-700">{p.links.length}</span> links</span>
+                <div className="flex shrink-0 items-center gap-3 text-xs text-[var(--text-muted)]">
+                  <span className="tabular-nums"><span className="font-medium text-[var(--text)]">{p.elements.length}</span> elements</span>
+                  <span className="tabular-nums"><span className="font-medium text-[var(--text)]">{p.forms.length}</span> forms</span>
+                  <span className="tabular-nums"><span className="font-medium text-[var(--text)]">{p.links.length}</span> links</span>
                 </div>
               </button>
               {isOpen && <PageDetailPanel page={p} />}
@@ -370,26 +370,26 @@ function PagesTab({ discovery }: { discovery: DiscoveryResult | null }): JSX.Ele
 
 function PageDetailPanel({ page }: { page: PageModel }): JSX.Element {
   return (
-    <div className="border-t border-neutral-200 bg-neutral-50 px-5 py-4 text-sm">
+    <div className="border-t border-[var(--border)] bg-[var(--surface-hover)] px-5 py-4 text-sm">
       <div className="grid gap-4 md:grid-cols-3">
         <div>
-          <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">URL</div>
-          <div className="mt-1 break-all font-mono text-xs text-neutral-700">{page.url}</div>
+          <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">URL</div>
+          <div className="mt-1 break-all font-mono text-xs text-[var(--text)]">{page.url}</div>
         </div>
         <div>
-          <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">Headings ({page.headings.length})</div>
-          <ul className="mt-1 space-y-0.5 text-xs text-neutral-700">
+          <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Headings ({page.headings.length})</div>
+          <ul className="mt-1 space-y-0.5 text-xs text-[var(--text)]">
             {page.headings.slice(0, 8).map((h, i) => (
               <li key={i}>
-                <span className="text-neutral-400">H{h.level}</span> {h.text}
+                <span className="text-[var(--text-subtle)]">H{h.level}</span> {h.text}
               </li>
             ))}
-            {page.headings.length === 0 && <li className="text-neutral-400">—</li>}
+            {page.headings.length === 0 && <li className="text-[var(--text-subtle)]">—</li>}
           </ul>
         </div>
         <div>
-          <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">Counts</div>
-          <div className="mt-1 space-y-0.5 text-xs text-neutral-700 tabular-nums">
+          <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Counts</div>
+          <div className="mt-1 space-y-0.5 text-xs text-[var(--text)] tabular-nums">
             <div>Elements: {page.elements.length}</div>
             <div>Forms: {page.forms.length}</div>
             <div>Links: {page.links.length}</div>
@@ -407,7 +407,7 @@ function FormsTab({ discovery }: { discovery: DiscoveryResult | null }): JSX.Ele
     p.forms.forEach((f, i) => forms.push({ pagePath: p.path || p.url, form: f, index: i }));
   }
   if (forms.length === 0) {
-    return <div className="rounded-lg border border-neutral-200 bg-white p-6 text-sm text-neutral-500 shadow-sm">No forms discovered.</div>;
+    return <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)] shadow-[var(--shadow)]">No forms discovered.</div>;
   }
   return (
     <div className="space-y-4">
@@ -415,23 +415,23 @@ function FormsTab({ discovery }: { discovery: DiscoveryResult | null }): JSX.Ele
         const safeFields = filterFormFields<DiscoveredForm['fields'][number]>(form.fields);
         const submit = form.submitSelectors[0];
         return (
-          <div key={`${pagePath}-${index}`} className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+          <div key={`${pagePath}-${index}`} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-sm">
-                  <IconFileText size={14} className="text-neutral-500" />
-                  <span className="font-medium uppercase tracking-wider text-neutral-500">{form.method || 'GET'}</span>
-                  <span className="truncate font-mono text-xs text-neutral-700">{form.action || '(current page)'}</span>
+                  <IconFileText size={14} className="text-[var(--text-muted)]" />
+                  <span className="font-medium uppercase tracking-wider text-[var(--text-muted)]">{form.method || 'GET'}</span>
+                  <span className="truncate font-mono text-xs text-[var(--text)]">{form.action || '(current page)'}</span>
                 </div>
-                <div className="mt-0.5 truncate font-mono text-xs text-neutral-500">on {pagePath}</div>
+                <div className="mt-0.5 truncate font-mono text-xs text-[var(--text-muted)]">on {pagePath}</div>
               </div>
-              <div className="text-xs text-neutral-500 tabular-nums">{safeFields.length} field{safeFields.length === 1 ? '' : 's'}</div>
+              <div className="text-xs text-[var(--text-muted)] tabular-nums">{safeFields.length} field{safeFields.length === 1 ? '' : 's'}</div>
             </div>
 
             <div className="mt-3 overflow-x-auto">
               <table className="min-w-full text-xs">
                 <thead>
-                  <tr className="text-left text-neutral-500">
+                  <tr className="text-left text-[var(--text-muted)]">
                     <th className="py-1 pr-4 font-medium">Label</th>
                     <th className="py-1 pr-4 font-medium">Name</th>
                     <th className="py-1 pr-4 font-medium">Type</th>
@@ -439,16 +439,16 @@ function FormsTab({ discovery }: { discovery: DiscoveryResult | null }): JSX.Ele
                     <th className="py-1 pr-4 font-medium">Recommended selector</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-100">
+                <tbody className="divide-y divide-[var(--border)]">
                   {safeFields.map((fd, j) => {
                     const sel = Array.isArray(fd.selectors) ? (fd.selectors as Array<{ strategy: string; value: string }>)[0] : undefined;
                     return (
-                      <tr key={j} className="text-neutral-700">
+                      <tr key={j} className="text-[var(--text)]">
                         <td className="py-1.5 pr-4">{fd.label ?? '—'}</td>
-                        <td className="py-1.5 pr-4 font-mono text-neutral-600">{fd.name ?? '—'}</td>
+                        <td className="py-1.5 pr-4 font-mono text-[var(--text-muted)]">{fd.name ?? '—'}</td>
                         <td className="py-1.5 pr-4">{fd.type}</td>
                         <td className="py-1.5 pr-4">{fd.required ? 'Yes' : 'No'}</td>
-                        <td className="py-1.5 pr-4 font-mono text-neutral-500">
+                        <td className="py-1.5 pr-4 font-mono text-[var(--text-muted)]">
                           {sel ? `${sel.strategy}: ${sel.value}` : '—'}
                         </td>
                       </tr>
@@ -459,8 +459,8 @@ function FormsTab({ discovery }: { discovery: DiscoveryResult | null }): JSX.Ele
             </div>
 
             {submit && (
-              <div className="mt-3 text-xs text-neutral-500">
-                Submit selector: <span className="font-mono text-neutral-700">{submit.strategy}: {submit.value}</span>
+              <div className="mt-3 text-xs text-[var(--text-muted)]">
+                Submit selector: <span className="font-mono text-[var(--text)]">{submit.strategy}: {submit.value}</span>
               </div>
             )}
           </div>
@@ -477,13 +477,13 @@ function ElementsTab({ discovery }: { discovery: DiscoveryResult | null }): JSX.
     for (const e of p.elements) elements.push({ pagePath: p.path || p.url, el: e });
   }
   if (elements.length === 0) {
-    return <div className="rounded-lg border border-neutral-200 bg-white p-6 text-sm text-neutral-500 shadow-sm">No interactive elements discovered.</div>;
+    return <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)] shadow-[var(--shadow)]">No interactive elements discovered.</div>;
   }
   return (
-    <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
       <div className="overflow-x-auto">
         <table className="min-w-full text-xs">
-          <thead className="bg-neutral-50 text-left text-neutral-500">
+          <thead className="bg-[var(--surface-hover)] text-left text-[var(--text-muted)]">
             <tr>
               <th className="px-4 py-2 font-medium">Category</th>
               <th className="px-4 py-2 font-medium">Tag</th>
@@ -493,18 +493,18 @@ function ElementsTab({ discovery }: { discovery: DiscoveryResult | null }): JSX.
               <th className="px-4 py-2 font-medium">Page</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-100">
+          <tbody className="divide-y divide-[var(--border)]">
             {elements.slice(0, 500).map(({ pagePath, el }, i) => {
               const safe = sanitizeField<DiscoveredElement>(el);
               const sel = safe.selectors?.[0];
               return (
-                <tr key={i} className="text-neutral-700">
-                  <td className="px-4 py-1.5"><span className="rounded bg-neutral-100 px-1.5 py-0.5 text-neutral-700">{safe.category}</span></td>
-                  <td className="px-4 py-1.5 font-mono text-neutral-600">{safe.tagName}</td>
+                <tr key={i} className="text-[var(--text)]">
+                  <td className="px-4 py-1.5"><span className="rounded bg-[var(--surface-hover)] px-1.5 py-0.5 text-[var(--text)]">{safe.category}</span></td>
+                  <td className="px-4 py-1.5 font-mono text-[var(--text-muted)]">{safe.tagName}</td>
                   <td className="px-4 py-1.5">{safe.accessibleName ?? '—'}</td>
-                  <td className="px-4 py-1.5 font-mono text-neutral-600">{safe.testId ?? '—'}</td>
-                  <td className="px-4 py-1.5 font-mono text-neutral-500">{sel ? `${sel.strategy}: ${sel.value}` : '—'}</td>
-                  <td className="px-4 py-1.5 font-mono text-neutral-500">{pagePath}</td>
+                  <td className="px-4 py-1.5 font-mono text-[var(--text-muted)]">{safe.testId ?? '—'}</td>
+                  <td className="px-4 py-1.5 font-mono text-[var(--text-muted)]">{sel ? `${sel.strategy}: ${sel.value}` : '—'}</td>
+                  <td className="px-4 py-1.5 font-mono text-[var(--text-muted)]">{pagePath}</td>
                 </tr>
               );
             })}
@@ -512,7 +512,7 @@ function ElementsTab({ discovery }: { discovery: DiscoveryResult | null }): JSX.
         </table>
       </div>
       {elements.length > 500 && (
-        <div className="border-t border-neutral-200 bg-neutral-50 px-4 py-2 text-xs text-neutral-500">
+        <div className="border-t border-[var(--border)] bg-[var(--surface-hover)] px-4 py-2 text-xs text-[var(--text-muted)]">
           Showing first 500 of {elements.length} elements.
         </div>
       )}
@@ -527,13 +527,13 @@ function LinksTab({ discovery }: { discovery: DiscoveryResult | null }): JSX.Ele
     for (const l of p.links) links.push({ pagePath: p.path || p.url, link: l });
   }
   if (links.length === 0) {
-    return <div className="rounded-lg border border-neutral-200 bg-white p-6 text-sm text-neutral-500 shadow-sm">No links discovered.</div>;
+    return <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)] shadow-[var(--shadow)]">No links discovered.</div>;
   }
   return (
-    <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
       <div className="overflow-x-auto">
         <table className="min-w-full text-xs">
-          <thead className="bg-neutral-50 text-left text-neutral-500">
+          <thead className="bg-[var(--surface-hover)] text-left text-[var(--text-muted)]">
             <tr>
               <th className="px-4 py-2 font-medium">Text</th>
               <th className="px-4 py-2 font-medium">URL</th>
@@ -541,26 +541,26 @@ function LinksTab({ discovery }: { discovery: DiscoveryResult | null }): JSX.Ele
               <th className="px-4 py-2 font-medium">From page</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-100">
+          <tbody className="divide-y divide-[var(--border)]">
             {links.slice(0, 500).map(({ pagePath, link }, i) => (
-              <tr key={i} className="text-neutral-700">
+              <tr key={i} className="text-[var(--text)]">
                 <td className="px-4 py-1.5">{link.text || '—'}</td>
-                <td className="px-4 py-1.5 font-mono text-neutral-600 break-all">{link.normalizedUrl}</td>
+                <td className="px-4 py-1.5 font-mono text-[var(--text-muted)] break-all">{link.normalizedUrl}</td>
                 <td className="px-4 py-1.5">
                   {link.inScope ? (
                     <span className="rounded-full border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-blue-700">in scope</span>
                   ) : (
-                    <span className="rounded-full border border-neutral-200 bg-neutral-50 px-1.5 py-0.5 text-neutral-600">external</span>
+                    <span className="rounded-full border border-[var(--border)] bg-[var(--surface-hover)] px-1.5 py-0.5 text-[var(--text-muted)]">external</span>
                   )}
                 </td>
-                <td className="px-4 py-1.5 font-mono text-neutral-500">{pagePath}</td>
+                <td className="px-4 py-1.5 font-mono text-[var(--text-muted)]">{pagePath}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       {links.length > 500 && (
-        <div className="border-t border-neutral-200 bg-neutral-50 px-4 py-2 text-xs text-neutral-500">
+        <div className="border-t border-[var(--border)] bg-[var(--surface-hover)] px-4 py-2 text-xs text-[var(--text-muted)]">
           Showing first 500 of {links.length} links.
         </div>
       )}

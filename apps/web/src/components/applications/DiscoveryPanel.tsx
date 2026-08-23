@@ -89,7 +89,7 @@ export function DiscoveryPanel({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !running) onClose();
       }}
@@ -98,12 +98,12 @@ export function DiscoveryPanel({
         role="dialog"
         aria-modal="true"
         aria-labelledby="discovery-title"
-        className="w-full max-w-lg rounded-lg border border-neutral-200 bg-white shadow-lg"
+        className="w-full max-w-lg rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]"
       >
-        <div className="flex items-start justify-between border-b border-neutral-200 px-5 py-4">
+        <div className="flex items-start justify-between border-b border-[var(--border)] px-5 py-4">
           <div>
-            <h2 id="discovery-title" className="text-base font-semibold text-neutral-900">Discover Application</h2>
-            <p className="mt-0.5 text-xs text-neutral-500">
+            <h2 id="discovery-title" className="text-base font-semibold text-[var(--text)]">Discover Application</h2>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">
               AI Bug Hunter will crawl the application and build a structured application model
               containing pages, forms, links, interactive elements, and selector candidates.
             </p>
@@ -113,7 +113,7 @@ export function DiscoveryPanel({
             onClick={onClose}
             aria-label="Close"
             disabled={running}
-            className="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-400 disabled:opacity-40"
+            className="rounded p-1 text-[var(--text-subtle)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-40"
           >
             <IconXMark size={16} />
           </button>
@@ -122,19 +122,19 @@ export function DiscoveryPanel({
         {!result ? (
           <form onSubmit={submit} className="space-y-4 px-5 py-4">
             <div>
-              <label htmlFor="disco-url" className="block text-xs font-medium text-neutral-700">Base URL</label>
+              <label htmlFor="disco-url" className="block text-xs font-medium text-[var(--text)]">Base URL</label>
               <input
                 id="disco-url"
                 ref={firstInputRef}
                 type="url"
                 onChange={(e) => setBaseUrl(e.target.value)}
                 disabled={running}
-                className="mt-1 w-full rounded border border-neutral-300 bg-white px-3 py-2 font-mono text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                className="mt-1 w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 font-mono text-sm text-[var(--text)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="disco-pages" className="block text-xs font-medium text-neutral-700">Max Pages</label>
+                <label htmlFor="disco-pages" className="block text-xs font-medium text-[var(--text)]">Max Pages</label>
                 <input
                   id="disco-pages"
                   type="number"
@@ -142,12 +142,12 @@ export function DiscoveryPanel({
                   max={100}
                   onChange={(e) => setMaxPages(Number(e.target.value))}
                   disabled={running}
-                  className="mt-1 w-full rounded border border-neutral-300 bg-white px-3 py-2 text-sm tabular-nums text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                  className="mt-1 w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm tabular-nums text-[var(--text)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
                 />
-                <p className="mt-1 text-xs text-neutral-400">1–100</p>
+                <p className="mt-1 text-xs text-[var(--text-subtle)]">1–100</p>
               </div>
               <div>
-                <label htmlFor="disco-depth" className="block text-xs font-medium text-neutral-700">Max Depth</label>
+                <label htmlFor="disco-depth" className="block text-xs font-medium text-[var(--text)]">Max Depth</label>
                 <input
                   id="disco-depth"
                   type="number"
@@ -155,9 +155,9 @@ export function DiscoveryPanel({
                   max={10}
                   onChange={(e) => setMaxDepth(Number(e.target.value))}
                   disabled={running}
-                  className="mt-1 w-full rounded border border-neutral-300 bg-white px-3 py-2 text-sm tabular-nums text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                  className="mt-1 w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm tabular-nums text-[var(--text)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
                 />
-                <p className="mt-1 text-xs text-neutral-400">0–10</p>
+                <p className="mt-1 text-xs text-[var(--text-subtle)]">0–10</p>
               </div>
             </div>
 
@@ -169,25 +169,25 @@ export function DiscoveryPanel({
             )}
 
             {running && (
-              <div className="flex items-center gap-2 rounded border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-600" aria-live="polite">
+              <div className="flex items-center gap-2 rounded border border-[var(--border)] bg-[var(--surface-hover)] px-3 py-2 text-xs text-[var(--text-muted)]" aria-live="polite">
                 <IconSpinner size={14} />
                 <span>Discovering application… this may take up to 30 seconds.</span>
               </div>
             )}
 
-            <div className="flex justify-end gap-2 border-t border-neutral-200 pt-4">
+            <div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={running}
-                className="rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-400 disabled:opacity-60"
+                className="rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-60"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={running}
-                className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-400 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-60"
               >
                 {running && <IconSpinner size={14} />}
                 {running ? 'Discovering…' : 'Start Discovery'}
@@ -207,11 +207,11 @@ export function DiscoveryPanel({
               <SummaryStat label="Links" value={formatNumber(result.stats.linksFound)} />
               <SummaryStat label="Duration" value={formatDuration(result.stats.crawlDurationMs)} />
             </div>
-            <div className="flex justify-end gap-2 border-t border-neutral-200 pt-4">
+            <div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                className="rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
               >
                 Close
               </button>
@@ -238,9 +238,9 @@ export function DiscoveryPanel({
 
 function SummaryStat({ label, value }: { label: string; value: string }): JSX.Element {
   return (
-    <div className="rounded border border-neutral-200 bg-white px-3 py-2">
-      <div className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">{label}</div>
-      <div className="mt-0.5 text-sm font-semibold tabular-nums text-neutral-900">{value}</div>
+    <div className="rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
+      <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">{label}</div>
+      <div className="mt-0.5 text-sm font-semibold tabular-nums text-[var(--text)]">{value}</div>
     </div>
   );
 }

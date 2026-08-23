@@ -12,6 +12,7 @@ import { AddApplicationModal } from './AddApplicationModal.js';
 import { DiscoveryPanel } from './DiscoveryPanel.js';
 import { ApplicationDetailView } from './ApplicationDetailView.js';
 import { ThemedPageHeader } from '../shared/ThemedPageHeader.js';
+import { OrbitalEmptyState } from '../shared/OrbitalEmptyState.js';
 import type { ApplicationRow, ApplicationListResponse } from './types.js';
 
 interface ApplicationsViewProps {
@@ -182,9 +183,10 @@ export function ApplicationsView({ role, onNavigateToTests }: ApplicationsViewPr
             <button
               type="button"
               onClick={() => setRefreshTick((t) => t + 1)}
-              className="inline-flex items-center gap-1.5 rounded border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+              disabled={state.loading}
+              className="inline-flex items-center gap-1.5 rounded border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-60"
             >
-              <IconRefresh size={14} />
+              <IconRefresh size={14} className={state.loading ? 'animate-spin' : undefined} />
               Refresh
             </button>
             {canWrite && (
@@ -321,32 +323,24 @@ function MetricStrip({
 }
 
 function EmptyState({ canWrite, onAdd }: { canWrite: boolean; onAdd: () => void }): JSX.Element {
+  if (canWrite) {
+    return (
+      <OrbitalEmptyState
+        visualization="planet"
+        accent="violet"
+        title="No applications yet"
+        subtitle="Connect your first application to begin autonomous testing."
+        cta={{ label: 'Add Application', onClick: onAdd, icon: <IconPlus size={14} /> }}
+      />
+    );
+  }
   return (
-    <div className="rounded-lg border border-dashed border-[var(--border-strong)] bg-[var(--surface)] p-10 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]">
-        <IconGlobe size={22} />
-      </div>
-      <h3 className="mt-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-[var(--text-subtle)]">
-        No applications yet
-      </h3>
-      <p className="mt-2 text-sm text-[var(--text-muted)]">
-        Connect your first application to begin autonomous QA.
-      </p>
-      {canWrite ? (
-        <button
-          type="button"
-          onClick={onAdd}
-          className="mt-4 inline-flex items-center gap-1.5 rounded bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-        >
-          <IconPlus size={14} />
-          Add application
-        </button>
-      ) : (
-        <p className="mt-4 text-xs text-[var(--text-subtle)]">
-          You have read-only access. Ask an admin or QA engineer to register applications.
-        </p>
-      )}
-    </div>
+    <OrbitalEmptyState
+      visualization="planet"
+      accent="violet"
+      title="No applications yet"
+      subtitle="You have read-only access. Ask an admin or QA engineer to register applications."
+    />
   );
 }
 

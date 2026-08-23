@@ -95,7 +95,7 @@ export function RunTestButton({
           <button
             type="button"
             onClick={() => onNavigateToRun(state.runId)}
-            className={`inline-flex items-center gap-1 rounded border border-neutral-300 bg-white ${padding} font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-400`}
+            className={`inline-flex items-center gap-1 rounded border border-[var(--border)] bg-[var(--surface)] ${padding} font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]`}
           >
             <IconExternalLink size={12} />
             View Run
@@ -104,7 +104,7 @@ export function RunTestButton({
         <button
           type="button"
           onClick={() => setState({ kind: 'idle' })}
-          className={`inline-flex items-center gap-1 rounded border border-neutral-200 bg-white ${padding} font-medium text-neutral-600 hover:bg-neutral-50`}
+          className={`inline-flex items-center gap-1 rounded border border-[var(--border)] bg-[var(--surface)] ${padding} font-medium text-[var(--text-muted)] hover:bg-[var(--surface-hover)]`}
         >
           Reset
         </button>
@@ -125,7 +125,7 @@ export function RunTestButton({
         <button
           type="button"
           onClick={() => void start()}
-          className={`inline-flex items-center gap-1 rounded border border-neutral-300 bg-white ${padding} font-medium text-neutral-700 hover:bg-neutral-50`}
+          className={`inline-flex items-center gap-1 rounded border border-[var(--border)] bg-[var(--surface)] ${padding} font-medium text-[var(--text)] hover:bg-[var(--surface-hover)]`}
         >
           Retry
         </button>

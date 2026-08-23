@@ -26,7 +26,7 @@ function severityPill(sev: string): string {
     case 'low':
       return 'border-emerald-200 bg-emerald-50 text-emerald-700';
     default:
-      return 'border-neutral-200 bg-neutral-100 text-neutral-600';
+      return 'border-[var(--border)] bg-[var(--surface-hover)] text-[var(--text-muted)]';
   }
 }
 
@@ -58,21 +58,21 @@ export function BugIntelligenceSection({ onOpenBugs }: BugIntelligenceSectionPro
   }, []);
 
   return (
-    <section className="rounded-lg border border-violet-100 bg-white p-5 shadow-sm">
+    <section className="rounded-lg border border-violet-100 bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
       <div className="mb-3 flex items-center justify-between">
         <div>
           <div className="flex items-center gap-1.5">
             <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-violet-500" />
-            <h2 className="text-base font-semibold tracking-tight text-neutral-900">Bug Intelligence</h2>
+            <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">Bug Intelligence</h2>
           </div>
-          <p className="mt-0.5 text-xs text-neutral-500 flex items-center gap-1">
+          <p className="mt-0.5 text-xs text-[var(--text-muted)] flex items-center gap-1">
             <IconSparkles size={12} className="text-violet-500" /> AI-clustered defects from recent failures
           </p>
         </div>
         <button
           type="button"
           onClick={onOpenBugs}
-          className="inline-flex items-center gap-1 rounded border border-neutral-200 px-2.5 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-50"
+          className="inline-flex items-center gap-1 rounded border border-[var(--border)] px-2.5 py-1 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
         >
           View all <IconChevronRight size={12} />
         </button>
@@ -86,18 +86,18 @@ export function BugIntelligenceSection({ onOpenBugs }: BugIntelligenceSectionPro
         </div>
       )}
       {!error && items && items.length === 0 && (
-        <div className="rounded border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6 text-center text-sm text-neutral-500">
+        <div className="rounded border border-dashed border-[var(--border)] bg-[var(--surface-hover)] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
           No bugs detected. Failed tests will be clustered here.
         </div>
       )}
       {!error && items && items.length > 0 && (
-        <ul className="divide-y divide-neutral-100">
+        <ul className="divide-y divide-[var(--border)]">
           {items.map((c) => (
             <li key={c.id} className="py-2.5">
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="truncate text-sm font-medium text-neutral-900">
+                    <span className="truncate text-sm font-medium text-[var(--text)]">
                       {c.title || c.primaryFailureSignature || 'Untitled cluster'}
                     </span>
                     {c.regressionStatus === 'regressed' && (
@@ -106,7 +106,7 @@ export function BugIntelligenceSection({ onOpenBugs }: BugIntelligenceSectionPro
                       </span>
                     )}
                   </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
                     <span>{c.occurrenceCount} occurrence{c.occurrenceCount === 1 ? '' : 's'}</span>
                     <span aria-hidden>·</span>
                     <span>Confidence {Math.round(c.confidence * 100)}%</span>

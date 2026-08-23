@@ -3,6 +3,7 @@ import { PageHeader } from './shared/PageHeader.js';
 import { MetricPanel } from './shared/MetricPanel.js';
 import { StatusPill, type PillTone } from './shared/StatusPill.js';
 import { IconRefresh, IconSpinner } from './icons.js';
+import { OrbitalEmptyState } from './shared/OrbitalEmptyState.js';
 import { formatPercent } from '../lib/format.js';
 
 interface Reliability {
@@ -114,7 +115,7 @@ export function TestReliability(): JSX.Element {
             type="button"
             onClick={recalc}
             disabled={recalculating}
-            className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-neutral-200 transition-colors hover:border-violet-500/40 hover:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-violet-500/40 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface-hover)] px-3 py-1.5 text-xs font-medium text-[var(--text)] transition-colors hover:border-violet-500/40 hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-violet-500/40 disabled:opacity-60"
           >
             {recalculating ? <IconSpinner size={14} /> : <IconRefresh size={14} />}
             {recalculating ? 'Recalculating…' : 'Recalculate'}
@@ -137,14 +138,14 @@ export function TestReliability(): JSX.Element {
       </div>
 
       {loading ? (
-        <div className="h-40 animate-pulse rounded-xl bg-white/[0.03]" />
+        <div className="h-40 animate-pulse rounded-xl bg-[var(--surface-hover)]" />
       ) : matrixRows.length > 0 && maxCols > 0 ? (
-        <div className="rounded-xl border border-white/[0.06] bg-[rgba(12,14,22,0.65)] p-5 backdrop-blur-md">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-glass)] p-5 backdrop-blur-md">
           <div className="mb-4 flex items-center justify-between">
-            <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+            <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
               STABILITY MATRIX
             </div>
-            <div className="text-[10px] uppercase tracking-widest text-neutral-600 tabular-nums">
+            <div className="text-[10px] uppercase tracking-widest text-[var(--text-subtle)] tabular-nums">
               {matrixRows.length} TEST{matrixRows.length === 1 ? '' : 'S'} · LAST {maxCols} RUN
               {maxCols === 1 ? '' : 'S'}
             </div>
@@ -153,11 +154,11 @@ export function TestReliability(): JSX.Element {
             <table className="w-full text-xs">
               <thead>
                 <tr>
-                  <th scope="col" className="w-56 py-1 text-left font-normal text-[10px] uppercase tracking-widest text-neutral-500">
+                  <th scope="col" className="w-56 py-1 text-left font-normal text-[10px] uppercase tracking-widest text-[var(--text-subtle)]">
                     Test
                   </th>
                   {Array.from({ length: maxCols }).map((_, i) => (
-                    <th key={i} scope="col" className="px-1 py-1 text-center font-normal text-[10px] tabular-nums text-neutral-600">
+                    <th key={i} scope="col" className="px-1 py-1 text-center font-normal text-[10px] tabular-nums text-[var(--text-subtle)]">
                       {String(i + 1).padStart(2, '0')}
                     </th>
                   ))}
@@ -167,19 +168,19 @@ export function TestReliability(): JSX.Element {
                 {matrixRows.map((r) => {
                   const runs = (r.recentRuns ?? []).slice(0, maxCols);
                   return (
-                    <tr key={r.externalTestId} className="border-t border-white/[0.03]">
-                      <td className="max-w-[220px] truncate py-1.5 pr-2 text-neutral-300" title={r.testName}>
+                    <tr key={r.externalTestId} className="border-t border-[var(--border)]">
+                      <td className="max-w-[220px] truncate py-1.5 pr-2 text-[var(--text-muted)]" title={r.testName}>
                         {r.testName}
                       </td>
                       {Array.from({ length: maxCols }).map((_, i) => {
                         const run = runs[i];
                         const cls = !run
-                          ? 'bg-neutral-800/60'
+                          ? 'bg-[var(--surface-hover)]'
                           : run.status === 'passed'
                             ? 'bg-emerald-500/70'
                             : run.status === 'failed' || run.status === 'error'
                               ? 'bg-red-500/70'
-                              : 'bg-neutral-700/70';
+                              : 'bg-[var(--text-subtle)]';
                         return (
                           <td key={i} className="px-1 py-1">
                             <div
@@ -195,24 +196,22 @@ export function TestReliability(): JSX.Element {
               </tbody>
             </table>
           </div>
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-[10px] uppercase tracking-widest text-neutral-500">
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-[10px] uppercase tracking-widest text-[var(--text-subtle)]">
             <LegendSwatch cls="bg-emerald-500/70" label="Passed" />
             <LegendSwatch cls="bg-red-500/70" label="Failed" />
-            <LegendSwatch cls="bg-neutral-700/70" label="Skipped" />
-            <LegendSwatch cls="bg-neutral-800/60" label="No Data" />
+            <LegendSwatch cls="bg-[var(--text-subtle)]" label="Skipped" />
+            <LegendSwatch cls="bg-[var(--surface-hover)]" label="No Data" />
           </div>
         </div>
       ) : null}
 
       {items && items.length === 0 && !loading && (
-        <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-10 text-center">
-          <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
-            NO RELIABILITY DATA
-          </div>
-          <div className="mt-2 text-sm text-neutral-400">
-            Run some tests and click Recalculate to generate stability scores.
-          </div>
-        </div>
+        <OrbitalEmptyState
+          visualization="ring"
+          accent="violet"
+          title="Insufficient data"
+          subtitle="Run tests repeatedly to establish reliability patterns."
+        />
       )}
 
       {items && items.length > 0 && (
@@ -227,7 +226,7 @@ export function TestReliability(): JSX.Element {
         <button
           type="button"
           onClick={() => setShowAll((v) => !v)}
-          className="mx-auto block rounded-md border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-neutral-300 hover:bg-white/[0.06]"
+          className="mx-auto block rounded-md border border-[var(--border)] bg-[var(--surface-hover)] px-3 py-1.5 text-xs text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
         >
           {showAll ? 'Show less' : `Show all ${items.length}`}
         </button>
@@ -250,14 +249,14 @@ function ReliabilityCard({ r }: { r: Reliability }): JSX.Element {
     <div
       className={`rounded-xl border p-4 backdrop-blur-md ${
         insufficient
-          ? 'border-white/[0.04] bg-black/20 opacity-70'
-          : 'border-white/[0.06] bg-[rgba(12,14,22,0.65)]'
+          ? 'border-[var(--border)] bg-[var(--surface)] opacity-70'
+          : 'border-[var(--border)] bg-[var(--surface-glass)]'
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="truncate text-sm font-medium text-white/90">{r.testName}</div>
-          <div className="mt-0.5 font-mono text-[10px] text-neutral-500 truncate">
+          <div className="truncate text-sm font-medium text-[var(--text)]">{r.testName}</div>
+          <div className="mt-0.5 font-mono text-[10px] text-[var(--text-subtle)] truncate">
             {r.externalTestId}
           </div>
         </div>
@@ -272,8 +271,8 @@ function ReliabilityCard({ r }: { r: Reliability }): JSX.Element {
         <Stat label="Flaky Score" value={formatPercent(r.flakyScore, 0)} />
       </div>
       {insufficient ? (
-        <div className="mt-3 rounded-md border border-white/10 bg-black/30 p-3 text-xs text-neutral-400">
-          <span className="font-medium uppercase tracking-widest text-neutral-500">
+        <div className="mt-3 rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 text-xs text-[var(--text-muted)]">
+          <span className="font-medium uppercase tracking-widest text-[var(--text-subtle)]">
             INSUFFICIENT DATA
           </span>{' '}
           — Only {r.totalRuns} run{r.totalRuns === 1 ? '' : 's'} recorded. Minimum{' '}
@@ -282,16 +281,16 @@ function ReliabilityCard({ r }: { r: Reliability }): JSX.Element {
       ) : (
         <>
           {r.explanation && (
-            <div className="mt-3 text-xs text-neutral-400">{r.explanation}</div>
+            <div className="mt-3 text-xs text-[var(--text-muted)]">{r.explanation}</div>
           )}
           {r.signals.length > 0 && (
-            <ul className="mt-2 space-y-1 text-xs text-neutral-500">
+            <ul className="mt-2 space-y-1 text-xs text-[var(--text-subtle)]">
               {r.signals.slice(0, 4).map((s, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="text-neutral-600">›</span>
+                  <span className="text-[var(--text-subtle)]">›</span>
                   <span>
-                    <span className="text-neutral-400">{s.name}</span>{' '}
-                    <span className="tabular-nums text-neutral-600">
+                    <span className="text-[var(--text-muted)]">{s.name}</span>{' '}
+                    <span className="tabular-nums text-[var(--text-subtle)]">
                       ({s.contribution >= 0 ? '+' : ''}
                       {s.contribution.toFixed(2)})
                     </span>{' '}
@@ -310,10 +309,10 @@ function ReliabilityCard({ r }: { r: Reliability }): JSX.Element {
 function Stat({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div>
-      <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+      <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
         {label}
       </div>
-      <div className="mt-0.5 tabular-nums text-white/90">{value}</div>
+      <div className="mt-0.5 tabular-nums text-[var(--text)]">{value}</div>
     </div>
   );
 }

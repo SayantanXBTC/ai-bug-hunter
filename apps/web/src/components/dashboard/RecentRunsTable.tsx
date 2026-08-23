@@ -28,7 +28,7 @@ function statusPill(status: string): string {
     case 'running':
       return 'border-blue-200 bg-blue-50 text-blue-700';
     default:
-      return 'border-neutral-200 bg-neutral-100 text-neutral-600';
+      return 'border-[var(--border)] bg-[var(--surface-hover)] text-[var(--text-muted)]';
   }
 }
 
@@ -54,11 +54,11 @@ export function RecentRunsTable({ onOpenRun }: RecentRunsTableProps): JSX.Elemen
   }, []);
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+    <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold tracking-tight text-neutral-900">Recent Test Runs</h2>
-          <p className="text-xs text-neutral-500">Latest 8 executions across all applications.</p>
+          <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">Recent Test Runs</h2>
+          <p className="text-xs text-[var(--text-muted)]">Latest 8 executions across all applications.</p>
         </div>
       </div>
       {error && <div className="text-sm text-red-600">Failed to load: {error}</div>}
@@ -68,7 +68,7 @@ export function RecentRunsTable({ onOpenRun }: RecentRunsTableProps): JSX.Elemen
         </div>
       )}
       {!error && items && items.length === 0 && (
-        <div className="rounded border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6 text-center text-sm text-neutral-500">
+        <div className="rounded border border-dashed border-[var(--border)] bg-[var(--surface-hover)] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
           No test runs yet.
         </div>
       )}
@@ -76,7 +76,7 @@ export function RecentRunsTable({ onOpenRun }: RecentRunsTableProps): JSX.Elemen
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="text-xs uppercase tracking-wide text-neutral-500">
+              <tr className="text-xs uppercase tracking-wide text-[var(--text-muted)]">
                 <th scope="col" className="pb-2 pr-3 font-medium">Test</th>
                 <th scope="col" className="pb-2 pr-3 font-medium">Status</th>
                 <th scope="col" className="pb-2 pr-3 font-medium">Duration</th>
@@ -89,9 +89,9 @@ export function RecentRunsTable({ onOpenRun }: RecentRunsTableProps): JSX.Elemen
                 <tr
                   key={r.id}
                   onClick={onOpenRun}
-                  className="cursor-pointer border-t border-neutral-100 hover:bg-neutral-50"
+                  className="cursor-pointer border-t border-[var(--border)] hover:bg-[var(--surface-hover)]"
                 >
-                  <td className="py-2 pr-3 font-medium text-neutral-900">
+                  <td className="py-2 pr-3 font-medium text-[var(--text)]">
                     <div className="truncate max-w-xs">{r.testName || r.testId}</div>
                   </td>
                   <td className="py-2 pr-3">
@@ -99,13 +99,13 @@ export function RecentRunsTable({ onOpenRun }: RecentRunsTableProps): JSX.Elemen
                       {r.status}
                     </span>
                   </td>
-                  <td className="py-2 pr-3 tabular-nums text-neutral-600">
+                  <td className="py-2 pr-3 tabular-nums text-[var(--text-muted)]">
                     {formatDuration(r.durationMs ?? 0)}
                   </td>
-                  <td className="py-2 pr-3 text-neutral-500">
+                  <td className="py-2 pr-3 text-[var(--text-muted)]">
                     {formatRelativeTime(r.startedAt)}
                   </td>
-                  <td className="py-2 text-neutral-400">
+                  <td className="py-2 text-[var(--text-subtle)]">
                     {r.evidenceIds && r.evidenceIds.length > 0 && (
                       <IconPaperclip size={14} aria-label={`${r.evidenceIds.length} evidence`} />
                     )}

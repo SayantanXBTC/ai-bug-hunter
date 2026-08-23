@@ -248,7 +248,7 @@ export function GenerateTestsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-neutral-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -259,9 +259,9 @@ export function GenerateTestsModal({
         aria-modal="true"
         aria-labelledby="gen-tests-title"
         onKeyDown={onKeyDown}
-        className="my-8 w-full max-w-2xl rounded-lg border border-neutral-200 bg-white shadow-lg"
+        className="my-8 w-full max-w-2xl rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]"
       >
-        <div className="flex items-start justify-between border-b border-neutral-200 px-5 py-4">
+        <div className="flex items-start justify-between border-b border-[var(--border)] px-5 py-4">
           <div className="flex items-start gap-2">
             <span
               aria-hidden
@@ -270,10 +270,10 @@ export function GenerateTestsModal({
               <IconSparkles size={14} />
             </span>
             <div>
-              <h2 id="gen-tests-title" className="text-base font-semibold text-neutral-900">
+              <h2 id="gen-tests-title" className="text-base font-semibold text-[var(--text)]">
                 Generate Tests
               </h2>
-              <p className="mt-0.5 text-xs text-neutral-500">
+              <p className="mt-0.5 text-xs text-[var(--text-muted)]">
                 Claude proposes candidate tests from the discovered application model.
               </p>
             </div>
@@ -282,7 +282,7 @@ export function GenerateTestsModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+            className="rounded p-1 text-[var(--text-subtle)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
           >
             <IconXMark size={16} />
           </button>
@@ -307,7 +307,7 @@ export function GenerateTestsModal({
           </div>
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <label className="flex flex-col text-xs font-medium text-neutral-700">
+            <label className="flex flex-col text-xs font-medium text-[var(--text)]">
               Application <span className="text-red-500">*</span>
               <select
                 ref={firstFocusRef}
@@ -317,7 +317,7 @@ export function GenerateTestsModal({
                   setPreflight({ kind: 'idle' });
                   setResponse(null);
                 }}
-                className="mt-1 rounded border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                className="mt-1 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-sm text-[var(--text)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
               >
                 <option value="">Select an application…</option>
                 {applications.map((a) => (
@@ -328,12 +328,12 @@ export function GenerateTestsModal({
               </select>
             </label>
 
-            <label className="flex flex-col text-xs font-medium text-neutral-700">
+            <label className="flex flex-col text-xs font-medium text-[var(--text)]">
               Goal
               <select
                 value={goal}
                 onChange={(e) => setGoal(e.target.value as Goal)}
-                className="mt-1 rounded border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                className="mt-1 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-sm text-[var(--text)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
               >
                 {GOALS.map((g) => (
                   <option key={g} value={g}>
@@ -343,7 +343,7 @@ export function GenerateTestsModal({
               </select>
             </label>
 
-            <label className="flex flex-col text-xs font-medium text-neutral-700">
+            <label className="flex flex-col text-xs font-medium text-[var(--text)]">
               Max tests
               <input
                 type="number"
@@ -351,17 +351,17 @@ export function GenerateTestsModal({
                 max={20}
                 value={maxTests}
                 onChange={(e) => setMaxTests(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
-                className="mt-1 rounded border border-neutral-300 bg-white px-2 py-1.5 text-sm tabular-nums text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                className="mt-1 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-sm tabular-nums text-[var(--text)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
               />
             </label>
 
-            <label className="flex flex-col text-xs font-medium text-neutral-700">
+            <label className="flex flex-col text-xs font-medium text-[var(--text)]">
               Target page (optional)
               {preflight.kind === 'ready' && preflight.pagePaths.length > 0 ? (
                 <select
                   value={targetPage}
                   onChange={(e) => setTargetPage(e.target.value)}
-                  className="mt-1 rounded border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                  className="mt-1 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-sm text-[var(--text)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
                 >
                   <option value="">(any)</option>
                   {preflight.pagePaths.map((p) => (
@@ -376,7 +376,7 @@ export function GenerateTestsModal({
                   placeholder="/checkout"
                   value={targetPage}
                   onChange={(e) => setTargetPage(e.target.value)}
-                  className="mt-1 rounded border border-neutral-300 bg-white px-2 py-1.5 font-mono text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                  className="mt-1 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 font-mono text-sm text-[var(--text)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
                 />
               )}
             </label>
@@ -395,7 +395,7 @@ export function GenerateTestsModal({
                 <button
                   type="button"
                   onClick={() => onNavigateToApplications(app.id)}
-                  className="rounded border border-amber-300 bg-white px-2 py-0.5 font-medium text-amber-800 hover:bg-amber-100"
+                  className="rounded border border-amber-300 bg-[var(--surface)] px-2 py-0.5 font-medium text-amber-800 hover:bg-amber-100"
                 >
                   Discover Application
                 </button>
@@ -413,7 +413,7 @@ export function GenerateTestsModal({
               <button
                 type="button"
                 onClick={() => void generate()}
-                className="rounded border border-red-300 bg-white px-2 py-0.5 font-medium text-red-700 hover:bg-red-100"
+                className="rounded border border-red-300 bg-[var(--surface)] px-2 py-0.5 font-medium text-red-700 hover:bg-red-100"
               >
                 Retry
               </button>
@@ -432,8 +432,8 @@ export function GenerateTestsModal({
 
           {response && response.status === 'success' && (
             <div className="space-y-3">
-              <div className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-600">
-                <span className="font-medium text-neutral-800">
+              <div className="rounded-md border border-[var(--border)] bg-[var(--surface-hover)] px-3 py-2 text-xs text-[var(--text-muted)]">
+                <span className="font-medium text-[var(--text)]">
                   Generated {response.tests.length}
                 </span>
                 {' · '}
@@ -442,7 +442,7 @@ export function GenerateTestsModal({
                 {response.provider && (
                   <>
                     {' · '}
-                    <span className="text-neutral-500">
+                    <span className="text-[var(--text-muted)]">
                       {response.provider}/{response.model}
                     </span>
                   </>
@@ -473,12 +473,12 @@ export function GenerateTestsModal({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-neutral-200 px-5 py-4">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--border)] px-5 py-4">
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-400 disabled:opacity-60"
+            className="rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-60"
           >
             Cancel
           </button>
@@ -524,7 +524,7 @@ function PipelineStep({ label, accent }: { label: string; accent?: boolean }): J
   return (
     <span
       className={`inline-block rounded px-1.5 py-0.5 ${
-        accent ? 'bg-violet-600 text-white' : 'bg-white text-violet-900 ring-1 ring-violet-200'
+        accent ? 'bg-violet-600 text-white' : 'bg-[var(--surface)] text-violet-900 ring-1 ring-violet-200'
       }`}
     >
       {label}
@@ -549,7 +549,7 @@ function GeneratedTestCard({
 }: GeneratedCardProps): JSX.Element {
   const valid = t.validationStatus === 'valid';
   return (
-    <li className="rounded border border-neutral-200 bg-white p-3">
+    <li className="rounded border border-[var(--border)] bg-[var(--surface)] p-3">
       <div className="flex items-start gap-3">
         <input
           type="checkbox"
@@ -557,11 +557,11 @@ function GeneratedTestCard({
           disabled={!valid}
           onChange={onToggleSelect}
           aria-label={`Select ${t.test.name}`}
-          className="mt-1 h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-400"
+          className="mt-1 h-4 w-4 rounded border-[var(--border)] text-violet-600 focus:ring-violet-400"
         />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="truncate text-sm font-semibold text-neutral-900">{t.test.name}</div>
+            <div className="truncate text-sm font-semibold text-[var(--text)]">{t.test.name}</div>
             <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-700">
               <IconSparkles size={10} />
               AI Generated
@@ -582,9 +582,9 @@ function GeneratedTestCard({
             )}
           </div>
           {t.description && (
-            <div className="mt-1 text-xs text-neutral-500">{t.description}</div>
+            <div className="mt-1 text-xs text-[var(--text-muted)]">{t.description}</div>
           )}
-          <div className="mt-1 text-[11px] text-neutral-400">
+          <div className="mt-1 text-[11px] text-[var(--text-subtle)]">
             {t.test.steps.length} step{t.test.steps.length === 1 ? '' : 's'}
           </div>
           {!valid && t.issues.length > 0 && (
@@ -600,34 +600,34 @@ function GeneratedTestCard({
             <button
               type="button"
               onClick={onToggleExpand}
-              className="rounded border border-neutral-300 bg-white px-2 py-0.5 text-[11px] font-medium text-neutral-700 hover:bg-neutral-50"
+              className="rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-0.5 text-[11px] font-medium text-[var(--text)] hover:bg-[var(--surface-hover)]"
               aria-expanded={expanded}
             >
               {expanded ? 'Hide' : 'Review'} steps
             </button>
           </div>
           {expanded && (
-            <ol className="mt-2 space-y-1 rounded border border-neutral-100 bg-neutral-50 px-3 py-2 text-[11px] text-neutral-700">
+            <ol className="mt-2 space-y-1 rounded border border-[var(--border)] bg-[var(--surface-hover)] px-3 py-2 text-[11px] text-[var(--text)]">
               {t.test.steps.map((s, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="tabular-nums text-neutral-400">{i + 1}.</span>
+                  <span className="tabular-nums text-[var(--text-subtle)]">{i + 1}.</span>
                   <span className="font-medium text-violet-700">{s.action}</span>
                   {typeof s.selector === 'string' && (
-                    <span className="font-mono text-neutral-600">{s.selector}</span>
+                    <span className="font-mono text-[var(--text-muted)]">{s.selector}</span>
                   )}
                   {typeof s.url === 'string' && (
-                    <span className="font-mono text-neutral-600">{s.url}</span>
+                    <span className="font-mono text-[var(--text-muted)]">{s.url}</span>
                   )}
                   {s.action === 'fill' && typeof s.value === 'string' && (
-                    <span className="text-neutral-500">
+                    <span className="text-[var(--text-muted)]">
                       = {maskFieldValue(typeof s.selector === 'string' ? s.selector : '', s.value)}
                     </span>
                   )}
                   {s.action === 'selectOption' && typeof s.value === 'string' && (
-                    <span className="text-neutral-500">= {s.value}</span>
+                    <span className="text-[var(--text-muted)]">= {s.value}</span>
                   )}
                   {s.action === 'press' && typeof s.key === 'string' && (
-                    <span className="text-neutral-500">key {s.key}</span>
+                    <span className="text-[var(--text-muted)]">key {s.key}</span>
                   )}
                 </li>
               ))}

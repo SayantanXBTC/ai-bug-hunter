@@ -112,7 +112,7 @@ export function AddApplicationModal({ open, onClose, onCreated }: AddApplication
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -123,25 +123,25 @@ export function AddApplicationModal({ open, onClose, onCreated }: AddApplication
         aria-modal="true"
         aria-labelledby="add-app-title"
         onKeyDown={onDialogKeyDown}
-        className="w-full max-w-md rounded-lg border border-neutral-200 bg-white shadow-lg"
+        className="w-full max-w-md rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]"
       >
-        <div className="flex items-start justify-between border-b border-neutral-200 px-5 py-4">
+        <div className="flex items-start justify-between border-b border-[var(--border)] px-5 py-4">
           <div>
-            <h2 id="add-app-title" className="text-base font-semibold text-neutral-900">Add Application</h2>
-            <p className="mt-0.5 text-xs text-neutral-500">Register an application to run discovery and tests against.</p>
+            <h2 id="add-app-title" className="text-base font-semibold text-[var(--text)]">Add Application</h2>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">Register an application to run discovery and tests against.</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+            className="rounded p-1 text-[var(--text-subtle)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
           >
             <IconXMark size={16} />
           </button>
         </div>
         <form onSubmit={submit} className="space-y-4 px-5 py-4">
           <div>
-            <label htmlFor="app-name" className="block text-xs font-medium text-neutral-700">
+            <label htmlFor="app-name" className="block text-xs font-medium text-[var(--text)]">
               Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -150,13 +150,13 @@ export function AddApplicationModal({ open, onClose, onCreated }: AddApplication
               type="text"
               autoComplete="off"
               placeholder="e.g. Acme Web"
-              className="mt-1 w-full rounded border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+              className="mt-1 w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               disabled={submitting}
             />
           </div>
           <div>
-            <label htmlFor="app-url" className="block text-xs font-medium text-neutral-700">
+            <label htmlFor="app-url" className="block text-xs font-medium text-[var(--text)]">
               Base URL <span className="text-red-500">*</span>
             </label>
             <input
@@ -164,11 +164,11 @@ export function AddApplicationModal({ open, onClose, onCreated }: AddApplication
               type="url"
               autoComplete="off"
               placeholder="https://example.com"
-              className="mt-1 w-full rounded border border-neutral-300 bg-white px-3 py-2 font-mono text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+              className="mt-1 w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 font-mono text-sm text-[var(--text)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
               onChange={(e) => setForm((f) => ({ ...f, baseUrl: e.target.value }))}
               disabled={submitting}
             />
-            <p className="mt-1 text-xs text-neutral-500">Must begin with http:// or https://</p>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">Must begin with http:// or https://</p>
           </div>
 
           {clientError && (
@@ -183,26 +183,26 @@ export function AddApplicationModal({ open, onClose, onCreated }: AddApplication
               <button
                 type="button"
                 onClick={() => void submit()}
-                className="rounded border border-red-300 bg-white px-2 py-0.5 text-red-700 hover:bg-red-100"
+                className="rounded border border-red-300 bg-[var(--surface)] px-2 py-0.5 text-red-700 hover:bg-red-100"
               >
                 Retry
               </button>
             </div>
           )}
 
-          <div className="flex justify-end gap-2 border-t border-neutral-200 pt-4">
+          <div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-400 disabled:opacity-60"
+              className="rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-60"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-400 disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-60"
             >
               {submitting && <IconSpinner size={14} />}
               {submitting ? 'Adding…' : 'Add Application'}

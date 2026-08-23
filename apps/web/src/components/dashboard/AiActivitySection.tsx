@@ -25,17 +25,17 @@ export function AiActivitySection({ aiMetrics }: AiActivitySectionProps): JSX.El
   const empty = aiMetrics.requestCount === 0;
 
   return (
-    <section className="rounded-lg border border-violet-100 bg-white p-5 shadow-sm">
+    <section className="rounded-lg border border-violet-100 bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
       <div className="mb-3 flex items-center gap-1.5">
         <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-violet-500" />
-        <h2 className="text-base font-semibold tracking-tight text-neutral-900">AI Activity</h2>
+        <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">AI Activity</h2>
       </div>
-      <p className="mb-3 text-xs text-neutral-500 flex items-center gap-1">
+      <p className="mb-3 text-xs text-[var(--text-muted)] flex items-center gap-1">
         <IconSparkles size={12} className="text-violet-500" /> AI-assisted operations
       </p>
 
       {empty ? (
-        <div className="rounded border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6 text-center text-sm text-neutral-500">
+        <div className="rounded border border-dashed border-[var(--border)] bg-[var(--surface-hover)] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
           No recent AI activity
         </div>
       ) : (
@@ -47,26 +47,26 @@ export function AiActivitySection({ aiMetrics }: AiActivitySectionProps): JSX.El
               </span>
             )}
             {aiMetrics.model && (
-              <span className="rounded-full border border-neutral-200 bg-neutral-100 px-2 py-0.5 font-medium text-neutral-600">
+              <span className="rounded-full border border-[var(--border)] bg-[var(--surface-hover)] px-2 py-0.5 font-medium text-[var(--text-muted)]">
                 {aiMetrics.model}
               </span>
             )}
           </div>
           <dl className="grid grid-cols-3 gap-3">
             <div>
-              <dt className="text-xs text-neutral-500">Requests</dt>
-              <dd className="text-lg font-semibold tabular-nums text-neutral-900">
+              <dt className="text-xs text-[var(--text-muted)]">Requests</dt>
+              <dd className="text-lg font-semibold tabular-nums text-[var(--text)]">
                 {formatNumber(aiMetrics.requestCount)}
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-neutral-500">Success</dt>
+              <dt className="text-xs text-[var(--text-muted)]">Success</dt>
               <dd className="text-lg font-semibold tabular-nums text-emerald-700">
                 {formatNumber(aiMetrics.successCount)}
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-neutral-500">Failure</dt>
+              <dt className="text-xs text-[var(--text-muted)]">Failure</dt>
               <dd className="text-lg font-semibold tabular-nums text-red-700">
                 {formatNumber(aiMetrics.failureCount)}
               </dd>
@@ -74,14 +74,14 @@ export function AiActivitySection({ aiMetrics }: AiActivitySectionProps): JSX.El
           </dl>
           {topOperations.length > 0 && (
             <div>
-              <div className="mb-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
+              <div className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
                 Top operations
               </div>
-              <ul className="divide-y divide-neutral-100 text-sm">
+              <ul className="divide-y divide-[var(--border)] text-sm">
                 {topOperations.map(([name, stats]) => (
                   <li key={name} className="flex items-center justify-between py-1.5">
-                    <span className="text-neutral-700">{name}</span>
-                    <span className="tabular-nums text-neutral-500">
+                    <span className="text-[var(--text)]">{name}</span>
+                    <span className="tabular-nums text-[var(--text-muted)]">
                       {formatNumber(stats.count)} · {stats.count > 0 ? Math.round(stats.latencyMs / stats.count) : 0}ms avg
                     </span>
                   </li>

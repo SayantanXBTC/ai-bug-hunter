@@ -21,9 +21,9 @@ export function QualityScoreCard({ quality, insufficient }: QualityScoreCardProp
   const dash = (clamped / 100) * circumference;
 
   return (
-    <div className="flex h-full flex-col rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+    <div className="flex h-full flex-col rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+        <div className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
           Quality Score
         </div>
         {hasData ? (
@@ -37,7 +37,7 @@ export function QualityScoreCard({ quality, insufficient }: QualityScoreCardProp
             {tone.label}
           </span>
         ) : (
-          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+          <span className="rounded-full border border-[var(--border)] bg-[var(--surface-hover)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
             No data yet
           </span>
         )}
@@ -55,7 +55,7 @@ export function QualityScoreCard({ quality, insufficient }: QualityScoreCardProp
               cx={70}
               cy={70}
               r={radius}
-              className="stroke-neutral-100"
+              className="stroke-[var(--surface-hover)]"
               strokeWidth={10}
               fill="none"
             />
@@ -74,16 +74,16 @@ export function QualityScoreCard({ quality, insufficient }: QualityScoreCardProp
             )}
           </svg>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <div className={`text-4xl font-semibold tabular-nums ${hasData ? 'text-neutral-900' : 'text-neutral-400'}`}>
+            <div className={`text-4xl font-semibold tabular-nums ${hasData ? 'text-[var(--text)]' : 'text-[var(--text-subtle)]'}`}>
               {hasData ? score : 0}
             </div>
-            <div className="text-xs text-neutral-400">/ 100</div>
+            <div className="text-xs text-[var(--text-subtle)]">/ 100</div>
           </div>
         </div>
         <div className="min-w-0 flex-1">
           {hasData ? (
             <>
-              <div className="text-sm text-neutral-500">
+              <div className="text-sm text-[var(--text-muted)]">
                 Based on {quality!.sampleSize} recent test run{quality!.sampleSize === 1 ? '' : 's'}.
               </div>
               {quality!.warning && (
@@ -91,7 +91,7 @@ export function QualityScoreCard({ quality, insufficient }: QualityScoreCardProp
               )}
             </>
           ) : (
-            <div className="text-sm text-neutral-500">
+            <div className="text-sm text-[var(--text-muted)]">
               Not enough historical data yet. Run your first test to begin measuring
               application quality.
             </div>

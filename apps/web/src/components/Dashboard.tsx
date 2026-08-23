@@ -120,8 +120,8 @@ export function Dashboard({ onNavigate }: DashboardProps = {}): JSX.Element {
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">QA Overview</h1>
-          <p className="mt-1 text-sm text-neutral-500">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text)]">QA Overview</h1>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">
             Application quality, test health, and AI-assisted defect intelligence.
           </p>
         </div>
@@ -133,7 +133,7 @@ export function Dashboard({ onNavigate }: DashboardProps = {}): JSX.Element {
                 id="app-filter"
                 value={applicationId}
                 onChange={(e) => setApplicationId(e.target.value)}
-                className="rounded border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                className="rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-sm text-[var(--text)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
               >
                 <option value="">All applications</option>
                 {apps.map((a) => (
@@ -146,7 +146,7 @@ export function Dashboard({ onNavigate }: DashboardProps = {}): JSX.Element {
             type="button"
             onClick={() => setRefreshTick((t) => t + 1)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-400 disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-60"
           >
             <IconRefresh size={14} className={refreshing ? 'animate-spin' : undefined} />
             Refresh
@@ -165,7 +165,7 @@ export function Dashboard({ onNavigate }: DashboardProps = {}): JSX.Element {
       {(state.loading && !overview) ? (
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-1">
-            <div className="h-full rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+            <div className="h-full rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
               <SkeletonCard />
             </div>
           </div>
@@ -243,7 +243,7 @@ export function Dashboard({ onNavigate }: DashboardProps = {}): JSX.Element {
       )}
 
       {overview && (
-        <div className="flex items-center gap-2 text-xs text-neutral-400">
+        <div className="flex items-center gap-2 text-xs text-[var(--text-subtle)]">
           <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-violet-500" />
           <span className="flex items-center gap-1">
             <IconSparkles size={12} className="text-violet-500" /> indicates AI-assisted signal
