@@ -1,4 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { PageHeader } from './shared/PageHeader.js';
+import { MetricPanel } from './shared/MetricPanel.js';
+import { StatusPill, type PillTone } from './shared/StatusPill.js';
+import { IconRefresh, IconSpinner } from './icons.js';
+import { formatPercent } from '../lib/format.js';
 
 interface Reliability {
   externalTestId: string;
@@ -12,24 +17,44 @@ interface Reliability {
   signals: Array<{ name: string; contribution: number; explanation: string }>;
   explanation: string;
   calculatedAt: string;
+  recentRuns?: Array<{ status: string; at: string }>;
 }
 
-const STATUS_ICON: Record<string, string> = {
-  stable: '🟢',
-  suspected_flaky: '🟡',
-  flaky: '🔴',
-  unstable: '🟠',
-  insufficient_data: '⚪',
+const STATUS_TONE: Record<Reliability['status'], PillTone> = {
+  stable: 'passed',
+  suspected_flaky: 'error',
+  flaky: 'failed',
+  unstable: 'error',
+  insufficient_data: 'neutral',
 };
+
+const STATUS_LABEL: Record<Reliability['status'], string> = {
+  stable: 'Stable',
+  suspected_flaky: 'Suspected Flaky',
+  flaky: 'Flaky',
+  unstable: 'Unstable',
+  insufficient_data: 'Insufficient Data',
+};
+
+const HINTS: Record<Reliability['status'], string> = {
+  stable: 'Consistent pass/fail behavior',
+  suspected_flaky: 'Early flakiness signals',
+  flaky: 'Non-deterministic outcomes',
+  unstable: 'Consistently failing recently',
+  insufficient_data: 'Not enough runs to classify',
+};
+
+const MIN_RUNS_DEFAULT = 5;
 
 export function TestReliability(): JSX.Element {
   const [items, setItems] = useState<Reliability[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   const load = async (): Promise<void> => {
     try {
-      const res = await fetch('/api/ai/test-reliability?page=1&limit=25');
+      const res = await fetch('/api/ai/test-reliability?page=1&limit=100');
       const body = await res.json();
       setItems(body.items);
     } catch (err) {
@@ -54,75 +79,241 @@ export function TestReliability(): JSX.Element {
     }
   };
 
-  const counts: Record<string, number> = {};
-  for (const r of items ?? []) counts[r.status] = (counts[r.status] ?? 0) + 1;
+  const counts = useMemo(() => {
+    const c: Record<Reliability['status'], number> = {
+      stable: 0,
+      suspected_flaky: 0,
+      flaky: 0,
+      unstable: 0,
+      insufficient_data: 0,
+    };
+    for (const r of items ?? []) c[r.status]++;
+    return c;
+  }, [items]);
+
+  const matrixRows = useMemo(() => {
+    const withRuns = (items ?? []).filter((r) => (r.recentRuns?.length ?? 0) > 0);
+    return showAll ? withRuns : withRuns.slice(0, 20);
+  }, [items, showAll]);
+
+  const maxCols = useMemo(() => {
+    const maxLen = matrixRows.reduce((m, r) => Math.max(m, r.recentRuns?.length ?? 0), 0);
+    return Math.min(maxLen, 10);
+  }, [matrixRows]);
+
+  const loading = items === null && !error;
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-5 space-y-4">
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-lg font-semibold">Test Reliability</h2>
-          <p className="mt-1 text-sm text-slate-400">
-            Historical flakiness — deterministic scoring; stable-broken tests are not misclassified
-            as flaky.
-          </p>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="STABILITY MATRIX"
+        title="Test Reliability"
+        subtitle="Historical stability and flakiness analysis across your test suite."
+        actions={
+          <button
+            type="button"
+            onClick={recalc}
+            disabled={recalculating}
+            className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-neutral-200 transition-colors hover:border-violet-500/40 hover:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-violet-500/40 disabled:opacity-60"
+          >
+            {recalculating ? <IconSpinner size={14} /> : <IconRefresh size={14} />}
+            {recalculating ? 'Recalculating…' : 'Recalculate'}
+          </button>
+        }
+      />
+
+      {error && (
+        <div className="rounded-md border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-300">
+          {error}
         </div>
-        <button
-          onClick={recalc}
-          disabled={recalculating}
-          className="rounded bg-brand-600 px-3 py-1 text-sm text-white hover:bg-brand-500 disabled:opacity-50"
-        >
-          {recalculating ? 'Recalculating…' : 'Recalculate'}
-        </button>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <MetricPanel index={0} label="Stable" value={counts.stable} hint={HINTS.stable} accent="emerald" />
+        <MetricPanel index={1} label="Suspected Flaky" value={counts.suspected_flaky} hint={HINTS.suspected_flaky} accent="orange" />
+        <MetricPanel index={2} label="Flaky" value={counts.flaky} hint={HINTS.flaky} accent="red" />
+        <MetricPanel index={3} label="Unstable" value={counts.unstable} hint={HINTS.unstable} accent="orange" />
+        <MetricPanel index={4} label="Insufficient" value={counts.insufficient_data} hint={HINTS.insufficient_data} accent="neutral" />
       </div>
 
-      {error && <div className="text-sm text-rose-400">{error}</div>}
-
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
-        {(['stable', 'suspected_flaky', 'flaky', 'unstable', 'insufficient_data'] as const).map((s) => (
-          <div key={s} className="border border-slate-800 rounded px-2 py-1">
-            <div className="text-xs uppercase tracking-wider text-slate-500">{s}</div>
-            <div className="text-slate-100">{counts[s] ?? 0}</div>
+      {loading ? (
+        <div className="h-40 animate-pulse rounded-xl bg-white/[0.03]" />
+      ) : matrixRows.length > 0 && maxCols > 0 ? (
+        <div className="rounded-xl border border-white/[0.06] bg-[rgba(12,14,22,0.65)] p-5 backdrop-blur-md">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+              STABILITY MATRIX
+            </div>
+            <div className="text-[10px] uppercase tracking-widest text-neutral-600 tabular-nums">
+              {matrixRows.length} TEST{matrixRows.length === 1 ? '' : 'S'} · LAST {maxCols} RUN
+              {maxCols === 1 ? '' : 'S'}
+            </div>
           </div>
-        ))}
-      </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr>
+                  <th scope="col" className="w-56 py-1 text-left font-normal text-[10px] uppercase tracking-widest text-neutral-500">
+                    Test
+                  </th>
+                  {Array.from({ length: maxCols }).map((_, i) => (
+                    <th key={i} scope="col" className="px-1 py-1 text-center font-normal text-[10px] tabular-nums text-neutral-600">
+                      {String(i + 1).padStart(2, '0')}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {matrixRows.map((r) => {
+                  const runs = (r.recentRuns ?? []).slice(0, maxCols);
+                  return (
+                    <tr key={r.externalTestId} className="border-t border-white/[0.03]">
+                      <td className="max-w-[220px] truncate py-1.5 pr-2 text-neutral-300" title={r.testName}>
+                        {r.testName}
+                      </td>
+                      {Array.from({ length: maxCols }).map((_, i) => {
+                        const run = runs[i];
+                        const cls = !run
+                          ? 'bg-neutral-800/60'
+                          : run.status === 'passed'
+                            ? 'bg-emerald-500/70'
+                            : run.status === 'failed' || run.status === 'error'
+                              ? 'bg-red-500/70'
+                              : 'bg-neutral-700/70';
+                        return (
+                          <td key={i} className="px-1 py-1">
+                            <div
+                              className={`mx-auto h-3 w-3 rounded-sm ${cls}`}
+                              title={run ? `${run.status} · ${new Date(run.at).toLocaleString()}` : 'no data'}
+                            />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-[10px] uppercase tracking-widest text-neutral-500">
+            <LegendSwatch cls="bg-emerald-500/70" label="Passed" />
+            <LegendSwatch cls="bg-red-500/70" label="Failed" />
+            <LegendSwatch cls="bg-neutral-700/70" label="Skipped" />
+            <LegendSwatch cls="bg-neutral-800/60" label="No Data" />
+          </div>
+        </div>
+      ) : null}
 
-      {items === null ? (
-        <div className="text-slate-400 text-sm">Loading…</div>
-      ) : items.length === 0 ? (
-        <div className="text-slate-500 text-sm">No reliability data yet. Run some tests and recalculate.</div>
-      ) : (
+      {items && items.length === 0 && !loading && (
+        <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-10 text-center">
+          <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+            NO RELIABILITY DATA
+          </div>
+          <div className="mt-2 text-sm text-neutral-400">
+            Run some tests and click Recalculate to generate stability scores.
+          </div>
+        </div>
+      )}
+
+      {items && items.length > 0 && (
         <div className="space-y-2">
           {items.map((r) => (
-            <div key={r.externalTestId} className="border border-slate-800 rounded p-3">
-              <div className="flex justify-between">
-                <div className="flex items-center gap-2">
-                  <span>{STATUS_ICON[r.status] ?? '⚪'}</span>
-                  <span className="text-slate-100 font-medium">{r.testName}</span>
-                </div>
-                <div className="text-xs text-slate-400">
-                  {r.status} · flaky {Math.round(r.flakyScore * 100)}% · reliability{' '}
-                  {Math.round(r.reliabilityScore * 100)}%
-                </div>
-              </div>
-              <div className="mt-1 text-xs text-slate-400">
-                {r.passCount} / {r.totalRuns} passed · {r.failureCount} failed
-              </div>
-              <div className="mt-1 text-xs text-slate-500">{r.explanation}</div>
-              {r.signals.length > 0 && (
-                <ul className="mt-1 text-xs text-slate-400 list-disc list-inside">
-                  {r.signals.slice(0, 3).map((s, i) => (
-                    <li key={i}>
-                      {s.name} ({s.contribution >= 0 ? '+' : ''}
-                      {s.contribution.toFixed(2)}) — {s.explanation}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <ReliabilityCard key={r.externalTestId} r={r} />
           ))}
         </div>
       )}
+
+      {items && items.length > 20 && matrixRows.length < items.length && (
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          className="mx-auto block rounded-md border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-neutral-300 hover:bg-white/[0.06]"
+        >
+          {showAll ? 'Show less' : `Show all ${items.length}`}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function LegendSwatch({ cls, label }: { cls: string; label: string }): JSX.Element {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span aria-hidden className={`h-2.5 w-2.5 rounded-sm ${cls}`} /> {label}
+    </span>
+  );
+}
+
+function ReliabilityCard({ r }: { r: Reliability }): JSX.Element {
+  const insufficient = r.status === 'insufficient_data';
+  return (
+    <div
+      className={`rounded-xl border p-4 backdrop-blur-md ${
+        insufficient
+          ? 'border-white/[0.04] bg-black/20 opacity-70'
+          : 'border-white/[0.06] bg-[rgba(12,14,22,0.65)]'
+      }`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium text-white/90">{r.testName}</div>
+          <div className="mt-0.5 font-mono text-[10px] text-neutral-500 truncate">
+            {r.externalTestId}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <StatusPill tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</StatusPill>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+        <Stat label="Passed" value={`${r.passCount} / ${r.totalRuns}`} />
+        <Stat label="Failed" value={String(r.failureCount)} />
+        <Stat label="Reliability" value={formatPercent(r.reliabilityScore, 0)} />
+        <Stat label="Flaky Score" value={formatPercent(r.flakyScore, 0)} />
+      </div>
+      {insufficient ? (
+        <div className="mt-3 rounded-md border border-white/10 bg-black/30 p-3 text-xs text-neutral-400">
+          <span className="font-medium uppercase tracking-widest text-neutral-500">
+            INSUFFICIENT DATA
+          </span>{' '}
+          — Only {r.totalRuns} run{r.totalRuns === 1 ? '' : 's'} recorded. Minimum{' '}
+          {MIN_RUNS_DEFAULT} required for reliability classification.
+        </div>
+      ) : (
+        <>
+          {r.explanation && (
+            <div className="mt-3 text-xs text-neutral-400">{r.explanation}</div>
+          )}
+          {r.signals.length > 0 && (
+            <ul className="mt-2 space-y-1 text-xs text-neutral-500">
+              {r.signals.slice(0, 4).map((s, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="text-neutral-600">›</span>
+                  <span>
+                    <span className="text-neutral-400">{s.name}</span>{' '}
+                    <span className="tabular-nums text-neutral-600">
+                      ({s.contribution >= 0 ? '+' : ''}
+                      {s.contribution.toFixed(2)})
+                    </span>{' '}
+                    — {s.explanation}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }): JSX.Element {
+  return (
+    <div>
+      <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+        {label}
+      </div>
+      <div className="mt-0.5 tabular-nums text-white/90">{value}</div>
     </div>
   );
 }

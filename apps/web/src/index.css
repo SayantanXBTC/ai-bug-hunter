@@ -7,3 +7,45 @@ body,
 #root {
   height: 100%;
 }
+
+:root,
+[data-theme='dark'] {
+  --bg: #05060B;
+  --surface: #0B0D15;
+  --surface-elevated: #10121C;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(139, 92, 246, 0.2);
+  --text: #E5E7EB;
+  --text-muted: #94A3B8;
+  --text-subtle: #64748B;
+  --primary: #8B5CF6;
+  --primary-soft: rgba(139, 92, 246, 0.15);
+  --secondary: #22D3EE;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='light'] {
+  --bg: #F5F7FA;
+  --surface: #FFFFFF;
+  --surface-elevated: #FFFFFF;
+  --border: #E2E8F0;
+  --border-strong: #C7D2FE;
+  --text: #111827;
+  --text-muted: #64748B;
+  --text-subtle: #94A3B8;
+  --primary: #6D28D9;
+  --primary-soft: rgba(109, 40, 217, 0.10);
+  --secondary: #0891B2;
+  --success: #059669;
+  --warning: #D97706;
+  --danger: #DC2626;
+  --shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}

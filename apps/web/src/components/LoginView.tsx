@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from 'react';
+import { LoginScene } from './login/LoginScene.js';
+import { LoginCard } from './login/LoginCard.js';
 
 interface Props {
   onAuthenticated: () => void;
@@ -63,56 +65,21 @@ export function LoginView({ onAuthenticated }: Props): JSX.Element {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50">
-      <form
+    <LoginScene>
+      <LoginCard
+        mode={mode}
+        email={email}
+        password={password}
+        error={error}
+        submitting={submitting}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
         onSubmit={submit}
-        className="w-full max-w-sm rounded-lg border bg-white p-6 shadow-sm space-y-4"
-      >
-        <div>
-          <h1 className="text-xl font-semibold text-slate-800">AI Bug Hunter</h1>
-          <p className="text-sm text-slate-500">{mode === 'login' ? 'Sign in to continue' : 'Create an account'}</p>
-        </div>
-        <label className="block text-sm">
-          <span className="text-slate-700">Email</span>
-          <input
-            className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="text-slate-700">Password</span>
-          <input
-            className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
-            type="password"
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
-        {error && <div role="alert" className="text-sm text-rose-600">{error}</div>}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded bg-slate-800 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
-        >
-          {submitting ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Register'}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setMode(mode === 'login' ? 'register' : 'login');
-            setError(null);
-          }}
-          className="w-full text-xs text-slate-500 hover:text-slate-700"
-        >
-          {mode === 'login' ? 'Need an account? Register' : 'Have an account? Sign in'}
-        </button>
-      </form>
-    </div>
+        onSwitchMode={() => {
+          setMode(mode === 'login' ? 'register' : 'login');
+          setError(null);
+        }}
+      />
+    </LoginScene>
   );
 }
