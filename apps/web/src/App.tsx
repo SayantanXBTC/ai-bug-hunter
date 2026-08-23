@@ -7,6 +7,8 @@ import { TestRunDetail } from './components/TestRunDetail.js';
 import { Discovery } from './components/Discovery.js';
 import { AiGeneration } from './components/AiGeneration.js';
 import { BugIntelligence } from './components/BugIntelligence.js';
+import { TestReliability } from './components/TestReliability.js';
+import { RegressionCampaigns } from './components/RegressionCampaigns.js';
 import { useHealth } from './hooks/useHealth.js';
 
 const sections = [
@@ -74,6 +76,14 @@ export function App(): JSX.Element {
             applicationModel={discoveryResult?.application ?? null}
             applicationPagePaths={discoveryResult?.application.pages.map((p) => p.path) ?? []}
           />
+        </section>
+
+        <section id="regression">
+          <RegressionCampaigns />
+        </section>
+
+        <section id="reliability">
+          <TestReliability />
         </section>
 
         <section id="bugs">

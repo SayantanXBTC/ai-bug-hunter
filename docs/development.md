@@ -103,6 +103,52 @@ Response is an `ExecutionResult` with `status`, per-step timings, and a normaliz
 
 To silence engine logs during tests, set `TEST_ENGINE_QUIET=1`.
 
+## Flaky detection + regression campaigns (Phase 9)
+
+**Test reliability**
+
+```powershell
+curl -s -X POST http://localhost:5000/api/ai/test-reliability/recalculate
+curl -s "http://localhost:5000/api/ai/test-reliability?flakyOnly=true"
+```
+
+**Test cases**
+
+```powershell
+curl -s -X POST http://localhost:5000/api/test-cases -H "Content-Type: application/json" -d '{
+  "name": "Login smoke",
+  "priority": "critical",
+  "tags": ["smoke"],
+  "definition": { "id": "smoke-login", "name": "Login smoke", "targetUrl": "http://127.0.0.1:8080/", "steps": [{ "action": "navigate", "url": "http://127.0.0.1:8080/" }] }
+}'
+```
+
+**Regression campaigns**
+
+```powershell
+# Create (does NOT execute — human review required)
+curl -s -X POST http://localhost:5000/api/regression-campaigns -H "Content-Type: application/json" -d '{ "strategy": "risk_based", "maxTests": 10 }'
+
+# Explicit execute
+curl -s -X POST http://localhost:5000/api/regression-campaigns/<uuid>/run
+
+# Cancel cooperatively (current test finishes, remaining skipped)
+curl -s -X POST http://localhost:5000/api/regression-campaigns/<uuid>/cancel
+```
+
+Migration `004` applied via `npm run migrate --workspace @ai-bug-hunter/api`. Idempotent.
+
+Environment knobs (defaults in `.env.example`):
+
+```
+MIN_FLAKY_RUNS=10
+REGRESSION_MAX_CONCURRENCY=1
+MAX_AUTO_INVESTIGATIONS_PER_CAMPAIGN=20
+MAX_AI_SUMMARIES_PER_CAMPAIGN=10
+```
+
+Frontend dashboards: **Regression Campaigns** (create → preview → Run) and **Test Reliability** (recalculate + flaky/status breakdown).
+
 ## Bug intelligence (Phase 8)
 
 `POST /api/ai/bug-intelligence/analyze` — analyze failed runs (bounded), cluster by fingerprint + weighted similarity, upsert results. Accepts optional `{ since: "<ISO>" }` or `{ testRunIds: [...] }`; defaults to recent failed runs.

@@ -9,6 +9,9 @@ import { discoveryRouter } from './routes/discovery.js';
 import { aiRouter } from './routes/ai.js';
 import { investigationRouter } from './routes/investigation.js';
 import { bugIntelligenceRouter } from './routes/bugIntelligence.js';
+import { testCasesRouter } from './routes/testCases.js';
+import { testReliabilityRouter } from './routes/testReliability.js';
+import { regressionCampaignsRouter } from './routes/regressionCampaigns.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 export function createApp(): Express {
@@ -26,6 +29,9 @@ export function createApp(): Express {
   app.use('/api', aiRouter);
   app.use('/api', investigationRouter);
   app.use('/api', bugIntelligenceRouter);
+  app.use('/api', testCasesRouter);
+  app.use('/api', testReliabilityRouter);
+  app.use('/api', regressionCampaignsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

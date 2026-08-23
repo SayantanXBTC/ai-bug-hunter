@@ -54,6 +54,36 @@ Framework-agnostic TypeScript types and small helpers used by both frontend and 
 
 Phase 1 connects to an existing `ai_bug_hunter` database on a native Windows PostgreSQL 18.6 install. The API does not create, drop, or migrate the database. It only verifies connectivity (`SELECT 1`) and exposes reachability via the detailed health endpoint. No application tables are created in Phase 1.
 
+## Reliability + Regression campaigns (`apps/api/src/ai/reliability/`, `apps/api/src/ai/regression/`) — Phase 9
+
+Two deterministic layers plus a human-gated executor.
+
+```
+test_runs (historical)
+  → TestReliabilityService → flakyScorer → upsert test_reliability_snapshots
+                            └─ signals: alternation, multi-signature, duration variance,
+                               env correlation, single_bug_cluster_domination (−0.30)
+
+test_cases (extended: priority/enabled/tags/source/external_test_id)
+  → scoreTestRisk (failure_rate + regression_risk + open_bug_clusters + priority + recency + flaky_penalty)
+  → selectTests (all_enabled | smoke | risk_based)
+
+POST /api/regression-campaigns          → status="queued" (HUMAN REVIEW required)
+POST /api/regression-campaigns/:id/run  → sequential loop
+    per test: TestExecutor → TestRunPersistenceService
+              → optional FailureInvestigator (Phase 7, capped)
+    after all: BugIntelligenceService.analyze({testRunIds}) incremental
+  → deterministic quality: healthy | degraded | failed | inconclusive
+```
+
+**Endpoints:** `POST/GET/PATCH /api/test-cases`, `POST /api/ai/test-reliability/recalculate`, `GET /api/ai/test-reliability`, `GET /api/ai/test-reliability/:externalTestId`, `POST /api/regression-campaigns`, `POST /api/regression-campaigns/:id/run`, `POST /api/regression-campaigns/:id/cancel`, `GET /api/regression-campaigns`, `GET /api/regression-campaigns/:id`.
+
+**Human review boundary:** creating a campaign never executes. Frontend renders selected tests + explainable risk reasons; the user clicks Run.
+
+**AI usage:** deterministic layers use no LLM. Investigation reuses provider abstraction; without a key everything still works. Caps: `MAX_AUTO_INVESTIGATIONS_PER_CAMPAIGN`, `MAX_AI_SUMMARIES_PER_CAMPAIGN`.
+
+Full detail: [`regression-testing.md`](regression-testing.md).
+
 ## Bug intelligence (`apps/api/src/ai/intelligence/`) — Phase 8
 
 Cross-run failure clustering + regression intelligence. Hybrid architecture: deterministic fingerprints + explainable weighted similarity + union-find; LLM only for ambiguous pairs.

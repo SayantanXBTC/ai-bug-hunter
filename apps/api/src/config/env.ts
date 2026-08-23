@@ -39,6 +39,10 @@ const EnvSchema = z.object({
   BUG_INTEL_MAX_CANDIDATE_PAIRS: z.coerce.number().int().positive().max(50_000).default(2_000),
   BUG_INTEL_MAX_AI_COMPARISONS: z.coerce.number().int().nonnegative().max(1_000).default(100),
   BUG_INTEL_MIN_RESOLUTION_STREAK: z.coerce.number().int().positive().max(50).default(3),
+  MIN_FLAKY_RUNS: z.coerce.number().int().positive().max(500).default(10),
+  REGRESSION_MAX_CONCURRENCY: z.coerce.number().int().positive().max(20).default(1),
+  MAX_AUTO_INVESTIGATIONS_PER_CAMPAIGN: z.coerce.number().int().nonnegative().max(200).default(20),
+  MAX_AI_SUMMARIES_PER_CAMPAIGN: z.coerce.number().int().nonnegative().max(50).default(10),
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;

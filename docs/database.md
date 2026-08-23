@@ -99,6 +99,16 @@ Binary artifact metadata. The artifact bytes themselves live under `ARTIFACT_STO
 
 Index: `ix_artifacts_sha256`.
 
+### Phase 9 additions
+
+**`test_cases` extended columns** — `priority` (`critical|high|medium|low`), `enabled` (BOOL default true), `tags` (TEXT[]), `source` (`generated|manual|imported`), `external_test_id` (TEXT) linking test cases to persisted `test_runs.external_test_id`.
+
+**`test_reliability_snapshots`** — one row per `external_test_id` (UNIQUE). Fields: `total_runs`, `pass_count`, `failure_count`, `error_count`, `flaky_score` (0..1), `reliability_score` (0..1), `status` CHECK (`stable`|`suspected_flaky`|`flaky`|`unstable`|`insufficient_data`), `signals` JSONB (signal breakdown + explanation + failureSignatures), `duration_stats` JSONB, `environment_signals` JSONB, timing columns.
+
+**`regression_campaigns`** — `id`, `application_id` FK, `name`, `status` CHECK (`queued`|`running`|`passed`|`failed`|`cancelled`|`error`), `trigger` CHECK (`manual`|`api`|`ci`), `selection_strategy` CHECK (`all_enabled`|`risk_based`|`changed_area`|`bug_targeted`|`smoke`), counters, `quality` CHECK (`healthy`|`degraded`|`failed`|`inconclusive`), `cancel_requested` boolean.
+
+**`regression_campaign_tests`** — composite PK `(campaign_id, test_case_id)`, `selection_score` NUMERIC(4,3), `selection_reason` JSONB (explainable), `execution_run_id` FK → test_runs, `status`, `ordinal`.
+
 ### `bug_clusters` (Phase 8)
 One row per unique failure fingerprint. Identity via `fingerprint_key` (deterministic hash of primary signature).
 
