@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Checkout</title>
+  </head>
+  <body>
+    <h1>Checkout</h1>
+    <nav>
+      <a href="/app/hub">Home</a>
+    </nav>
+    <form action="/app/checkout/submit" method="POST" id="checkout-form">
+      <label for="full-name">Full name</label>
+      <input type="text" id="full-name" name="fullName" required />
+
+      <label for="address">Address</label>
+      <textarea id="address" name="address" required placeholder="Street address"></textarea>
+
+      <label for="card">Card number</label>
+      <input type="text" id="card" name="card" inputmode="numeric" required />
+
+      <label><input type="checkbox" name="terms" required /> Accept terms</label>
+
+      <button type="submit" data-testid="checkout-pay">Pay</button>
+    </form>
+  </body>
+</html>

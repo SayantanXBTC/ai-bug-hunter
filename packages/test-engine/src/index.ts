@@ -49,3 +49,35 @@ export {
   InMemoryEvidenceStore,
   type EvidenceStore,
 } from './evidence/evidenceStore.js';
+
+export {
+  DEFAULT_DISCOVERY_OPTIONS,
+  type AccessibilityNode,
+  type AccessibilitySnapshot,
+  type ApplicationModel,
+  type DiscoveredElement,
+  type DiscoveredForm,
+  type DiscoveredFormField,
+  type DiscoveredHeading,
+  type DiscoveredLink,
+  type DiscoveryOptions,
+  type DiscoveryResult,
+  type DiscoveryStats,
+  type DiscoveryWarning,
+  type DiscoveryWarningKind,
+  type ElementCategory,
+  type PageModel,
+  type ResolvedDiscoveryOptions,
+  type SelectorCandidate,
+  type SelectorStrategy,
+} from './discovery/discoveryTypes.js';
+
+export { DiscoveryEngine, type DiscoveryEngineOptions } from './discovery/discoveryEngine.js';
+
+export {
+  normalizeUrl,
+  isInScope,
+  isAllowedProtocol,
+  isIgnoredProtocol,
+  tryParseUrl,
+} from './discovery/urlNormalizer.js';

@@ -2,6 +2,8 @@
 
 AI Bug Hunter is an AI-powered autonomous web application testing and bug intelligence platform.
 
+> **Status: Phase 5 — Application discovery engine.** Phases 1–4 complete. Phase 5 adds a deterministic Chromium-based crawler that produces a compact, JSON-serializable `ApplicationModel` (pages, links, forms, interactive elements, ranked selector candidates, bounded accessibility snapshot) via `POST /api/discovery`. The output is designed for a future LLM to consume directly — no Playwright objects leak, no field values are captured, and scope/protocol filters prevent following external or unsafe URLs. **The LLM layer is intentionally not implemented yet.** History below.
+>
 > **Status: Phase 4 — Test run & evidence persistence.** Phases 1–3 (foundation, Playwright execution engine, evidence collection) are complete. Phase 4 makes execution history durable: PostgreSQL now stores applications, test cases, test runs, per-step results, and evidence metadata; binary artifacts (screenshots, DOM snapshots) live on the filesystem under a git-ignored `ARTIFACT_STORAGE_PATH`, referenced by content-addressed keys with SHA-256 checksums. New endpoints: `GET /api/test-runs`, `GET /api/test-runs/:id`, `GET /api/evidence/:id`, `POST/GET /api/applications`. **AI investigation is still not implemented** — the persistence layer is the substrate a future AI engine will consume.
 
 ## Architecture
@@ -80,6 +82,7 @@ Builds `packages/shared`, `apps/api`, and `apps/web`.
 - **Phase 2 (done):** Browser execution engine — `@ai-bug-hunter/test-engine` (Chromium via Playwright), structured test definitions, discriminated action model, normalized execution results, `POST /api/test-runs`.
 - **Phase 3 (done):** Evidence collection engine — screenshot, DOM snapshot, console logs, page errors, network metadata, failure classification, browser metadata.
 - **Phase 4 (done):** Test run & evidence persistence — PostgreSQL schema (applications, test cases, test runs, steps, artifacts, evidence), migration runner, `LocalArtifactStore` with SHA-256 checksums, `TestRunPersistenceService`, list/detail/download API endpoints, frontend surfaces persisted runs.
-- **Phase 5+:** Autonomous crawler, AI-powered test generation and root-cause analysis (Claude), bug detection/clustering/flaky-test intelligence, visual regression, cloud artifact storage, reporting, Jira integration.
+- **Phase 5 (done):** Application discovery engine — deterministic Chromium crawler, `ApplicationModel` with pages/links/forms/elements/ranked selectors/accessibility, `POST /api/discovery`, frontend Discovery panel.
+- **Phase 6+:** AI-powered test generation and root-cause analysis (Claude), bug detection/clustering/flaky-test intelligence, visual regression, cloud artifact storage, reporting, Jira integration.
 
 Deferred features are not implemented today, and the dashboard does not display fabricated data for them.

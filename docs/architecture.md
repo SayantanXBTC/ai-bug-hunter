@@ -117,6 +117,36 @@ launch browser
 
 **Security / privacy:** By design, the collector never records passwords, tokens, cookies, request bodies, headers, or environment variables. DOM snapshots and screenshots may still contain sensitive rendered content — treated as sensitive artifacts by future storage layers. The engine logs only counts and IDs, never DOM/screenshot payloads.
 
+## Discovery engine (`packages/test-engine/src/discovery/`) — Phase 5
+
+Deterministic web-app crawler that produces a structured `ApplicationModel` for future AI consumption. Lives inside `@ai-bug-hunter/test-engine` because it depends on Playwright, but has zero dependency on PostgreSQL, artifact storage, or the API layer.
+
+```
+POST /api/discovery
+    ↓
+DiscoveryEngine.discover(options)
+    ↓
+BrowserManager (Chromium, headless)
+    ↓
+BFS crawler (visited set, maxPages, maxDepth, scope filter)
+    ↓
+inspectPage(page)  →  in-browser gather (elements, links, forms, headings)
+    +                  ranked selector candidates (testId → role → label → name → id → css)
+    +                  Playwright accessibility snapshot (bounded, best-effort)
+    ↓
+ApplicationModel + DiscoveryStats + DiscoveryWarning[]
+```
+
+**Public surface** (via `@ai-bug-hunter/test-engine`): `DiscoveryEngine`, `DiscoveryOptions`, `DiscoveryResult`, `ApplicationModel`, `PageModel`, `DiscoveredElement`, `DiscoveredForm`, `DiscoveredLink`, `SelectorCandidate`, `normalizeUrl`, `isInScope`, `tryParseUrl`. No Playwright types leak.
+
+**Security** — protocol allow-list (http/https only), `sameOriginOnly` by default, `allowedHosts` extension, redirect-out-of-scope detection, no request/response body capture, no cookie/header capture.
+
+**Privacy** — never captures `input.value`, cookies, headers, tokens, environment variables. Field metadata only.
+
+**Persistence** — Phase 5 returns results in memory. No new tables. `test_cases` (Phase 4) will later reference concrete pages/actions surfaced by discovery.
+
+Full detail: [`discovery.md`](discovery.md).
+
 ## Persistence layer (`apps/api/src/db`, `apps/api/src/artifacts`, `apps/api/src/services`) — Phase 4
 
 Deterministic execution is now durable. The persistence layer is deliberately kept out of `@ai-bug-hunter/test-engine` so the test engine remains usable without PostgreSQL.

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Products</title>
+  </head>
+  <body>
+    <h1>Products</h1>
+    <nav>
+      <a href="/app/hub">Home</a>
+    </nav>
+    <form id="filter-form">
+      <label for="category">Category</label>
+      <select id="category" name="category">
+        <option value="all">All</option>
+        <option value="books">Books</option>
+        <option value="tools">Tools</option>
+      </select>
+
+      <fieldset>
+        <legend>Availability</legend>
+        <label><input type="radio" name="availability" value="in-stock" /> In stock</label>
+        <label><input type="radio" name="availability" value="all" checked /> All</label>
+      </fieldset>
+
+      <button type="submit">Apply Filters</button>
+    </form>
+    <ul>
+      <li><a href="/app/products?id=1">Product 1</a></li>
+      <li><a href="/app/products?id=2">Product 2</a></li>
+    </ul>
+  </body>
+</html>

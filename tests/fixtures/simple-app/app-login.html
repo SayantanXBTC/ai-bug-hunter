@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Login</title>
+  </head>
+  <body>
+    <h1>Sign In</h1>
+    <form action="/app/session" method="POST" id="login-form">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required placeholder="you@example.com" />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required />
+
+      <label><input type="checkbox" name="remember" /> Remember me</label>
+
+      <button type="submit" data-testid="login-submit">Sign In</button>
+      <button type="button">Forgot password</button>
+    </form>
+    <a href="/app/hub">Back</a>
+  </body>
+</html>

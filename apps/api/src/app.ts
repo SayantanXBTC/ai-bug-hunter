@@ -5,6 +5,7 @@ import { healthRouter } from './routes/health.js';
 import { testRunsRouter } from './routes/testRuns.js';
 import { applicationsRouter } from './routes/applications.js';
 import { evidenceRouter } from './routes/evidence.js';
+import { discoveryRouter } from './routes/discovery.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 export function createApp(): Express {
@@ -18,6 +19,7 @@ export function createApp(): Express {
   app.use('/api', testRunsRouter);
   app.use('/api', applicationsRouter);
   app.use('/api', evidenceRouter);
+  app.use('/api', discoveryRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

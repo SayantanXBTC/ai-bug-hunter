@@ -4,6 +4,7 @@ import { StatusBadge } from './components/StatusBadge.js';
 import { EmptyState } from './components/EmptyState.js';
 import { TestRunList } from './components/TestRunList.js';
 import { TestRunDetail } from './components/TestRunDetail.js';
+import { Discovery } from './components/Discovery.js';
 import { useHealth } from './hooks/useHealth.js';
 
 const sections = [
@@ -58,6 +59,10 @@ export function App(): JSX.Element {
           </div>
           <StatusBadge health={health} />
         </header>
+
+        <section id="discovery">
+          <Discovery />
+        </section>
 
         <section id="test-runs" className="rounded-lg border border-slate-800 bg-slate-900/50 p-5">
           <h2 className="text-lg font-semibold">Test Runs</h2>

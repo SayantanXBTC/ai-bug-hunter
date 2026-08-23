@@ -103,6 +103,34 @@ Response is an `ExecutionResult` with `status`, per-step timings, and a normaliz
 
 To silence engine logs during tests, set `TEST_ENGINE_QUIET=1`.
 
+## Application discovery (Phase 5)
+
+`POST /api/discovery` runs a deterministic Chromium crawl and returns an `ApplicationModel`. Example:
+
+```powershell
+curl -s -X POST http://localhost:5000/api/discovery `
+  -H "Content-Type: application/json" `
+  -d '{ "baseUrl": "https://example.com", "maxPages": 5, "maxDepth": 1 }'
+```
+
+Options (all optional): `maxPages` (≤100), `maxDepth` (0..10), `sameOriginOnly` (default true), `allowedHosts` (up to 20), `navigationTimeoutMs`, `actionTimeoutMs`, `pageSettleMs`, `maxElementsPerPage`, `accessibilityMaxNodes`.
+
+The frontend has a **Discovery** section that submits the same request and renders pages, elements, forms, links, warnings, and selector candidates.
+
+### Local fixture
+
+`packages/test-engine/src/test/fixtureServer.ts` serves a deterministic multi-page app used by discovery tests:
+
+- `/app/hub` — nav with links to sub-pages plus mailto/javascript/external hrefs
+- `/app/login` — email + password + remember-me + submit (with data-testid)
+- `/app/dashboard` — headings, nav, duplicate-text buttons, image with alt
+- `/app/products` — select, radios (one pre-checked), links with query params
+- `/app/checkout` — text, textarea, checkbox, submit
+- `/app/redirect-external` — 302 to https://example.com (drives redirect-out-of-scope warning)
+- `/app/loop-a` / `/app/loop-b` — cycle prevention target
+
+All served on `127.0.0.1:<ephemeral port>`. Nothing external.
+
 ## Evidence collection (Phase 3)
 
 When a step fails, the engine automatically attaches an `evidence` package to the returned `ExecutionResult`:
