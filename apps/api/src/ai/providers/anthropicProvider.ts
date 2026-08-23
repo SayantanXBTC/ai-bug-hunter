@@ -8,6 +8,7 @@ export interface AnthropicProviderOptions {
 
 export class AnthropicProvider implements LLMProvider {
   readonly name = 'anthropic';
+  readonly supportsImages = true;
   private readonly client: Anthropic;
 
   constructor(opts: AnthropicProviderOptions) {
@@ -18,13 +19,32 @@ export class AnthropicProvider implements LLMProvider {
   }
 
   async generate(req: LLMRequest): Promise<LLMResponse> {
+    const content: Array<
+      | { type: 'text'; text: string }
+      | {
+          type: 'image';
+          source: {
+            type: 'base64';
+            media_type: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif';
+            data: string;
+          };
+        }
+    > = [];
+    for (const img of req.images ?? []) {
+      content.push({
+        type: 'image',
+        source: { type: 'base64', media_type: img.mediaType, data: img.data },
+      });
+    }
+    content.push({ type: 'text', text: req.userPrompt });
+
     let response: Anthropic.Message;
     try {
       response = await this.client.messages.create({
         model: req.model,
         max_tokens: req.maxOutputTokens ?? 4096,
         system: req.systemPrompt,
-        messages: [{ role: 'user', content: req.userPrompt }],
+        messages: [{ role: 'user', content }],
       });
     } catch (err) {
       throw classify(err);

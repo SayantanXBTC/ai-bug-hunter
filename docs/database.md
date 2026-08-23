@@ -99,6 +99,24 @@ Binary artifact metadata. The artifact bytes themselves live under `ARTIFACT_STO
 
 Index: `ix_artifacts_sha256`.
 
+### `investigations` (Phase 7)
+One AI failure investigation per test run.
+
+| column           | type         | notes                                                 |
+| ---------------- | ------------ | ----------------------------------------------------- |
+| id               | UUID         | PK                                                    |
+| test_run_id      | UUID UNIQUE  | FK → test_runs(id) ON DELETE CASCADE                  |
+| classification   | TEXT         | CHECK IN (`application_defect`, `test_defect`, `environment_failure`, `dependency_failure`, `data_failure`, `inconclusive`) |
+| severity         | TEXT         | CHECK IN (`critical`, `high`, `medium`, `low`, `none`) |
+| confidence       | NUMERIC(3,2) | CHECK 0..1                                            |
+| summary          | TEXT         |                                                       |
+| likely_root_cause| TEXT         | nullable                                              |
+| provider, model  | TEXT         | LLM metadata                                          |
+| report_json      | JSONB        | full InvestigationReport                              |
+| created_at       | TIMESTAMPTZ  | default NOW()                                         |
+
+Indexes: `ix_investigations_test_run_id`, `ix_investigations_classification`. Upsert-per-test-run via DELETE+INSERT; `force=true` regenerates.
+
 ### `evidence`
 Evidence facets attached to a test run (and optionally a specific step).
 

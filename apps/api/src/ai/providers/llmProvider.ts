@@ -1,8 +1,14 @@
+export interface ImageEvidenceInput {
+  mediaType: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif';
+  data: string; // base64
+}
+
 export interface LLMRequest {
   systemPrompt: string;
   userPrompt: string;
   model: string;
   maxOutputTokens?: number;
+  images?: ImageEvidenceInput[];
 }
 
 export interface LLMResponse {
@@ -14,6 +20,7 @@ export interface LLMResponse {
 
 export interface LLMProvider {
   readonly name: string;
+  readonly supportsImages: boolean;
   generate(req: LLMRequest): Promise<LLMResponse>;
 }
 

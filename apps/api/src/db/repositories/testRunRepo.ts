@@ -125,6 +125,22 @@ export async function listTestRuns(
   return { items: items.rows, total: Number(countRes.rows[0]!.count) };
 }
 
+export async function listHistoricalRuns(
+  exec: Executor,
+  externalTestId: string,
+  excludeRunId: string,
+  limit: number,
+): Promise<TestRunRecord[]> {
+  const { rows } = await exec.query<TestRunRecord>(
+    `SELECT * FROM test_runs
+     WHERE external_test_id = $1 AND id <> $2
+     ORDER BY created_at DESC
+     LIMIT $3`,
+    [externalTestId, excludeRunId, limit],
+  );
+  return rows;
+}
+
 export async function listStepsForRun(
   exec: Executor,
   testRunId: string,

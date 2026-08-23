@@ -54,6 +54,38 @@ Framework-agnostic TypeScript types and small helpers used by both frontend and 
 
 Phase 1 connects to an existing `ai_bug_hunter` database on a native Windows PostgreSQL 18.6 install. The API does not create, drop, or migrate the database. It only verifies connectivity (`SELECT 1`) and exposes reachability via the detailed health endpoint. No application tables are created in Phase 1.
 
+## AI failure investigation (`apps/api/src/ai/investigation/`) — Phase 7
+
+Second LLM use case. Takes a persisted failed `test_run` and produces an evidence-backed `InvestigationReport`. Reuses the Phase 6 `LLMProvider` abstraction (extended with optional multimodal image input).
+
+```
+test_run + steps + evidence + artifacts + historical runs
+    ↓ compute FailureSignals (deterministic)
+    ↓ build ObservedFacts (deterministic, IDed)
+    ↓ compact InvestigationContext (bounded)
+LLMProvider (Anthropic supports images; screenshot optionally attached)
+    ↓ JSON
+Parse → Zod (LLMInvestigationSchema) → validator
+    ├─ classification/severity enums
+    ├─ confidence clamped to [0,1]
+    ├─ observedFactIds must exist
+    ├─ hypotheses.evidenceIds must exist
+    ├─ supportingEvidence.evidenceId must exist
+    └─ reproductionStepIndices must exist
+    ↓
+InvestigationReport (validationWarnings[] records every scrubbed reference)
+    ↓
+UPSERT investigations (unique per test_run_id)
+```
+
+**Key principle:** the LLM produces hypotheses only. `ObservedFact`s come from deterministic code. `supportingEvidence` and reproduction steps must reference existing DB rows. Invented references are stripped, not accepted.
+
+**Endpoints:** `POST /api/ai/investigate/:testRunId` (+ `?force=true`), `GET /api/ai/investigate/:testRunId`. Passed runs get `not_investigable` without an LLM call. Missing API key → safe `provider_error` HTTP 200.
+
+**Multimodal:** `LLMProvider.supportsImages: boolean` gates screenshot upload. Anthropic mapping isolated in `anthropicProvider.ts`; SDK types still don't leak.
+
+**Persistence:** `investigations` table (migration `002`) with UNIQUE(test_run_id) and JSONB `report_json`. Full detail in [`investigation.md`](investigation.md) and [`database.md`](database.md).
+
 ## Test engine (`packages/test-engine`) — Phase 2
 
 Isolated package that owns all browser automation. The Express API depends on it through a narrow TypeScript surface; Playwright types never leak into HTTP layers or the frontend.

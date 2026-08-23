@@ -4,6 +4,7 @@ export type FakeResponder = (req: LLMRequest) => string | Promise<string> | LLMP
 
 export class FakeLLMProvider implements LLMProvider {
   readonly name = 'fake';
+  readonly supportsImages = true;
   private readonly responder: FakeResponder;
 
   constructor(responder: FakeResponder) {

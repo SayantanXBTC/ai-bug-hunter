@@ -1,4 +1,5 @@
 import { useTestRun } from '../hooks/useTestRuns.js';
+import { InvestigationPanel } from './InvestigationPanel.js';
 
 interface Props {
   id: string;
@@ -93,6 +94,8 @@ export function TestRunDetail({ id, onClose }: Props): JSX.Element {
           </ul>
         )}
       </div>
+
+      <InvestigationPanel testRunId={data.id} runStatus={data.status} />
     </div>
   );
 }

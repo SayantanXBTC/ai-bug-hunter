@@ -103,6 +103,20 @@ Response is an `ExecutionResult` with `status`, per-step timings, and a normaliz
 
 To silence engine logs during tests, set `TEST_ENGINE_QUIET=1`.
 
+## AI failure investigation (Phase 7)
+
+`POST /api/ai/investigate/:testRunId` — investigate a failed/errored run. Optional `?force=true` regenerates. `GET` retrieves the persisted investigation.
+
+```powershell
+curl -s -X POST http://localhost:5000/api/ai/investigate/<run-uuid>
+```
+
+Investigation is skipped for passed runs (returns `not_investigable`). Without a real `ANTHROPIC_API_KEY` the endpoint returns HTTP 200 with `status: "provider_error"` and a safe message. All tests run against `FakeLLMProvider`; no real API calls in CI.
+
+New table `investigations` (migration `002`) — apply via `npm run migrate --workspace @ai-bug-hunter/api`. Migration is idempotent.
+
+In the UI, open any failed test run — the **AI Failure Investigation** panel appears below evidence. Click **Investigate Failure** (or **Regenerate**). The report shows classification, severity, confidence, likely root cause, observed facts, hypotheses, supporting evidence (clickable to `/api/evidence/:id`), reproduction steps, and recommended next steps.
+
 ## AI test generation (Phase 6)
 
 `POST /api/ai/generate-tests` turns a discovered `ApplicationModel` into `TestDefinition`s.
