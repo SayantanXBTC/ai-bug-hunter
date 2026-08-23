@@ -15,7 +15,13 @@ export interface TestRunRecord {
   error_name: string | null;
   error_message: string | null;
   error_step_index: number | null;
+  owner_id: string | null;
   created_at: Date;
+}
+
+export interface Scope {
+  ownerId: string;
+  isAdmin: boolean;
 }
 
 export interface TestRunStepRecord {
@@ -39,6 +45,7 @@ export interface InsertTestRunInput {
   finishedAt: Date;
   durationMs: number;
   error?: { name: string; message: string; stepIndex?: number };
+  ownerId?: string | null;
 }
 
 export interface InsertStepInput {
@@ -59,8 +66,8 @@ export async function insertTestRun(
     `INSERT INTO test_runs
        (test_case_id, external_test_id, test_name, status,
         started_at, finished_at, duration_ms,
-        error_name, error_message, error_step_index)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        error_name, error_message, error_step_index, owner_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
      RETURNING *`,
     [
       input.testCaseId ?? null,
@@ -73,6 +80,7 @@ export async function insertTestRun(
       input.error?.name ?? null,
       input.error?.message ?? null,
       input.error?.stepIndex ?? null,
+      input.ownerId ?? null,
     ],
   );
   return rows[0]!;
@@ -104,23 +112,38 @@ export async function insertTestRunStep(
 export async function getTestRunById(
   exec: Executor,
   id: string,
+  scope?: Scope,
 ): Promise<TestRunRecord | null> {
   const { rows } = await exec.query<TestRunRecord>('SELECT * FROM test_runs WHERE id = $1', [id]);
-  return rows[0] ?? null;
+  const row = rows[0] ?? null;
+  if (!row) return null;
+  if (scope && !scope.isAdmin && row.owner_id !== scope.ownerId) return null;
+  return row;
 }
 
 export async function listTestRuns(
   exec: Executor,
   page: number,
   limit: number,
+  scope?: Scope,
 ): Promise<{ items: TestRunRecord[]; total: number }> {
   const offset = (page - 1) * limit;
+  const filterParams: unknown[] = [];
+  let where = '';
+  if (scope && !scope.isAdmin) {
+    filterParams.push(scope.ownerId);
+    where = `WHERE owner_id = $1`;
+  }
+  const params = [...filterParams, limit, offset];
   const [items, countRes] = await Promise.all([
     exec.query<TestRunRecord>(
-      'SELECT * FROM test_runs ORDER BY created_at DESC LIMIT $1 OFFSET $2',
-      [limit, offset],
+      `SELECT * FROM test_runs ${where} ORDER BY created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params,
     ),
-    exec.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM test_runs'),
+    exec.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM test_runs ${where}`,
+      filterParams,
+    ),
   ]);
   return { items: items.rows, total: Number(countRes.rows[0]!.count) };
 }

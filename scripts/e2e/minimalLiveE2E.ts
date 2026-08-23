@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 // Minimal live E2E validation for AI Bug Hunter.
 // Guarded by RUN_MINIMAL_LIVE_E2E=1. Spawns isolated API on :5099, isolated schema.
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -38,7 +37,7 @@ const pool = new pg.Pool({
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function apiCall(method: string, path: string, body?: unknown): Promise<{ status: number; body: any }> {
+async function apiCall(method: string, path: string, body?: unknown): Promise<{ status: number; body: Record<string, unknown> | string | null }> {
   let lastErr: unknown = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
@@ -129,14 +128,14 @@ async function main(): Promise<void> {
   }
 
   // STAGE 2 Discovery
-  let applicationModel: any = null;
+  let applicationModel: unknown = null;
   let applicationId: string | null = null;
   {
     const appResp = await apiCall('POST', '/api/applications', { name: 'E2E Live', baseUrl: DEMO_URL });
     applicationId = appResp.body?.id ?? null;
     const d = await apiCall('POST', '/api/discovery', { baseUrl: DEMO_URL, maxPages: 5, maxDepth: 2 });
     const pages = d.body?.application?.pages ?? [];
-    const forms = pages.flatMap((p: any) => p.forms ?? []);
+    const forms = pages.flatMap((p: { forms?: unknown[] }) => p.forms ?? []);
     applicationModel = d.body?.application;
     const ok = d.status === 200 && pages.length >= 3 && forms.length >= 1;
     record('Discovery', ok, `pages=${pages.length} forms=${forms.length} app=${applicationId ? 'ok' : 'no'}`);
@@ -193,7 +192,7 @@ async function main(): Promise<void> {
   {
     const detail = await apiCall('GET', `/api/test-runs/${runId}`);
     const evidence = detail.body?.evidence ?? [];
-    const withArtifact = evidence.find((e: any) => e.artifactId);
+    const withArtifact = evidence.find((e: { artifactId?: string; id?: string }) => e.artifactId);
     let evOk = detail.status === 200 && evidence.length > 0 && !!withArtifact;
     let evNote = `steps=${detail.body?.steps?.length ?? 0} evidence=${evidence.length}`;
     if (withArtifact) {
@@ -241,7 +240,7 @@ async function main(): Promise<void> {
     await apiCall('POST', '/api/ai/bug-intelligence/analyze', { testRunIds: [runId, run2Id] });
     const clusters = await apiCall('GET', '/api/ai/bug-intelligence/clusters');
     const items = clusters.body?.items ?? [];
-    const maxOcc = Math.max(0, ...items.map((c: any) => c.occurrenceCount ?? c.memberCount ?? 0));
+    const maxOcc = Math.max(0, ...items.map((c: { occurrenceCount?: number; memberCount?: number }) => c.occurrenceCount ?? c.memberCount ?? 0));
     if (items.length >= 1 && maxOcc >= 2) {
       record('Bug Intelligence', true, `clusters=${items.length} maxOccurrence=${maxOcc}`);
     } else if (items.length >= 1) {

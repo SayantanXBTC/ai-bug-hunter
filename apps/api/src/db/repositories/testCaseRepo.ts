@@ -16,8 +16,14 @@ export interface TestCaseRow {
   tags: string[];
   source: TestCaseSource;
   external_test_id: string | null;
+  owner_id: string | null;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface Scope {
+  ownerId: string;
+  isAdmin: boolean;
 }
 
 type Executor = Pool | PoolClient;
@@ -33,14 +39,15 @@ export interface InsertTestCaseInput {
   tags?: string[];
   source?: TestCaseSource;
   externalTestId?: string | null;
+  ownerId?: string | null;
 }
 
 export async function insertTestCase(exec: Executor, input: InsertTestCaseInput): Promise<TestCaseRow> {
   const { rows } = await exec.query<TestCaseRow>(
     `INSERT INTO test_cases
        (application_id, name, description, target_url, definition,
-        priority, enabled, tags, source, external_test_id)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        priority, enabled, tags, source, external_test_id, owner_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
      RETURNING *`,
     [
       input.applicationId ?? null,
@@ -53,6 +60,7 @@ export async function insertTestCase(exec: Executor, input: InsertTestCaseInput)
       input.tags ?? [],
       input.source ?? 'manual',
       input.externalTestId ?? input.definition.id,
+      input.ownerId ?? null,
     ],
   );
   return rows[0]!;
@@ -96,18 +104,29 @@ export async function updateTestCase(
   return rows[0] ?? null;
 }
 
-export async function getTestCaseById(exec: Executor, id: string): Promise<TestCaseRow | null> {
+export async function getTestCaseById(
+  exec: Executor,
+  id: string,
+  scope?: Scope,
+): Promise<TestCaseRow | null> {
   const { rows } = await exec.query<TestCaseRow>('SELECT * FROM test_cases WHERE id = $1', [id]);
-  return rows[0] ?? null;
+  const row = rows[0] ?? null;
+  if (!row) return null;
+  if (scope && !scope.isAdmin && row.owner_id !== scope.ownerId) return null;
+  return row;
 }
 
 export async function listTestCases(
   exec: Executor,
-  opts: { page: number; limit: number; applicationId?: string; enabled?: boolean; priority?: TestCasePriority; tag?: string },
+  opts: { page: number; limit: number; applicationId?: string; enabled?: boolean; priority?: TestCasePriority; tag?: string; scope?: Scope },
 ): Promise<{ items: TestCaseRow[]; total: number }> {
   const offset = (opts.page - 1) * opts.limit;
   const filters: string[] = [];
   const params: unknown[] = [];
+  if (opts.scope && !opts.scope.isAdmin) {
+    params.push(opts.scope.ownerId);
+    filters.push(`owner_id = $${params.length}`);
+  }
   if (opts.applicationId) {
     params.push(opts.applicationId);
     filters.push(`application_id = $${params.length}`);

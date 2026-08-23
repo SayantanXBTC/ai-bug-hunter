@@ -136,6 +136,46 @@ Opt-in via `RETENTION_ENABLED=true`. When enabled:
 | SSRF | discovery/generation | `targetUrlPolicy` blocklist |
 | Prompt injection | LLM prompts | Fenced input + Zod + business-rule validation |
 
+## Tenant / account isolation (migration 006)
+
+Migration `006_tenant_isolation.sql` adds a nullable `owner_id` column to
+`applications`, `test_cases`, `test_runs`, `bug_clusters`, and
+`regression_campaigns` (foreign key to `users.id`, `ON DELETE SET NULL`, per-table
+index). Semantics:
+
+- Rows created by non-admin users have `owner_id = req.user.id`.
+- Rows with `owner_id = NULL` are legacy / unowned and are visible only to
+  admins.
+- Repositories accept an optional `scope: { ownerId, isAdmin }`. When `isAdmin`
+  is true, no filter is applied. When `isAdmin` is false, `WHERE owner_id =
+  $ownerId` is added on list, and single-row reads return `null` (→ HTTP 404 at
+  the route) when the row's `owner_id` does not match.
+- Route mapping (implemented):
+  - `applications` — list / get / create / **delete** are scoped. Delete blocks
+    if child test cases or test runs exist (409).
+  - `test-cases` — list / get / create / patch are scoped (patch pre-checks
+    ownership).
+  - `test-runs` — list / get / create are scoped. Persistence service propagates
+    the caller's `ownerId`.
+  - `evidence` — `GET /api/evidence/:id` now joins to `test_runs.owner_id` and
+    returns 404 (not 403) when the caller is not the owner and is not an admin.
+    Existence is never leaked.
+
+### Deferred / follow-ups
+- `bug_clusters` and `regression_campaigns` currently accept the column and
+  index but their repositories/routes are **not yet scoped**. Both are
+  effectively still visible to any authenticated user; today's data plane treats
+  clustering as a shared workspace. Non-admins are still blocked from mutation
+  by role guards, but they can list/read shared clusters and campaigns.
+- Dashboard aggregate queries (`/api/dashboard/overview`,
+  `/api/dashboard/trends`) do not yet add `AND (owner_id = $userId OR $isAdmin)`
+  predicates. For a first non-admin login, the dashboard therefore continues to
+  reflect global (admin-view) counts. Tracked as a follow-up: extend
+  `dashboard.ts` after clusters/campaigns are scoped.
+- No backfill: existing rows keep `owner_id = NULL` and are admin-only visible.
+  Operator can run `UPDATE ... SET owner_id = '<admin-id>' WHERE owner_id IS
+  NULL` if they want to attribute historical data.
+
 ## Known limitations
 
 - Single-node deployment assumed; rate limits and session store are in-process.
@@ -147,3 +187,16 @@ Opt-in via `RETENTION_ENABLED=true`. When enabled:
   origins.
 - Regression campaigns hold no distributed lock; do not run more than one API
   node against the same database without adding one.
+- **Distributed rate limiting** is out of scope — the current sliding-window
+  limiter in `middleware/rateLimit.ts` is per-process. Multi-node deployment
+  would need a shared store (Redis or database-backed). Not implemented; adding
+  a hard dependency on Redis is deliberately deferred.
+- **Full DNS rebinding protection** requires resolving hostnames server-side
+  before every fetch and pinning the socket to the resolved IP. The current
+  `targetUrlPolicy` blocks private-range literals and known-bad hostnames
+  (23 regression tests) but does not re-resolve at connect time. Deferred.
+- **CSP header** is not emitted server-side (would break the Vite dev server).
+  Add via reverse proxy in production.
+- **Tenant isolation for bug clusters, regression campaigns, and dashboard
+  aggregates** is partially deferred — see the "Deferred / follow-ups" list
+  under Tenant isolation.

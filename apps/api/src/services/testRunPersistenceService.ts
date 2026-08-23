@@ -29,7 +29,7 @@ export class TestRunPersistenceService {
 
   async persist(
     result: ExecutionResult,
-    opts: { testCaseId?: string | null } = {},
+    opts: { testCaseId?: string | null; ownerId?: string | null } = {},
   ): Promise<PersistedTestRun> {
     // Phase 1: write artifacts to disk (non-transactional).
     const artifactRefs = await this.writeArtifacts(result.evidence);
@@ -41,6 +41,7 @@ export class TestRunPersistenceService {
 
       const run = await insertTestRun(client, {
         testCaseId: opts.testCaseId ?? null,
+        ownerId: opts.ownerId ?? null,
         externalTestId: result.testId,
         testName: result.testName,
         status: result.status,

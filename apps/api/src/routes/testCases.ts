@@ -72,6 +72,7 @@ testCasesRouter.post('/test-cases', requireRole('qa_engineer'), async (req: Requ
     const row = await insertTestCase(pool, {
       ...parsed.data,
       targetUrl: parsed.data.definition.targetUrl,
+      ownerId: req.user?.id ?? null,
     });
     res.status(201).json(row);
   } catch (err) {
@@ -84,6 +85,9 @@ testCasesRouter.get('/test-cases', requireUser, async (req: Request, res: Respon
   if (!parsed.success) return next(new HttpError(400, 'Invalid query'));
   try {
     const enabled = parsed.data.enabled === undefined ? undefined : parsed.data.enabled === 'true';
+    const scope = req.user
+      ? { ownerId: req.user.id, isAdmin: req.user.role === 'admin' }
+      : undefined;
     const opts: Parameters<typeof listTestCases>[1] = {
       page: parsed.data.page,
       limit: parsed.data.limit,
@@ -91,6 +95,7 @@ testCasesRouter.get('/test-cases', requireUser, async (req: Request, res: Respon
       ...(enabled !== undefined ? { enabled } : {}),
       ...(parsed.data.priority ? { priority: parsed.data.priority } : {}),
       ...(parsed.data.tag ? { tag: parsed.data.tag } : {}),
+      ...(scope ? { scope } : {}),
     };
     const { items, total } = await listTestCases(pool, opts);
     res.json({ items, page: parsed.data.page, limit: parsed.data.limit, total });
@@ -103,7 +108,10 @@ testCasesRouter.get('/test-cases/:id', requireUser, async (req: Request, res: Re
   const id = UuidParam.safeParse(req.params.id);
   if (!id.success) return next(new HttpError(400, 'Invalid id'));
   try {
-    const row = await getTestCaseById(pool, id.data);
+    const scope = req.user
+      ? { ownerId: req.user.id, isAdmin: req.user.role === 'admin' }
+      : undefined;
+    const row = await getTestCaseById(pool, id.data, scope);
     if (!row) return next(new HttpError(404, 'Test case not found'));
     res.json(row);
   } catch (err) {
@@ -121,6 +129,11 @@ testCasesRouter.patch('/test-cases/:id', requireRole('qa_engineer'), async (req:
     if (urlErr) return next(new HttpError(400, `Invalid target URL: ${urlErr}`));
   }
   try {
+    const scope = req.user
+      ? { ownerId: req.user.id, isAdmin: req.user.role === 'admin' }
+      : undefined;
+    const existing = await getTestCaseById(pool, id.data, scope);
+    if (!existing) return next(new HttpError(404, 'Test case not found'));
     const patch: Parameters<typeof updateTestCase>[2] = {};
     if (parsed.data.name !== undefined) patch.name = parsed.data.name;
     if (parsed.data.description !== undefined) patch.description = parsed.data.description;

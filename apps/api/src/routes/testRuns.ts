@@ -46,6 +46,7 @@ testRunsRouter.post(
       const execResult = await executor.run(parsed.data);
       const persisted = await persistence.persist(execResult, {
         testCaseId: parsed.data.testCaseId ?? null,
+        ownerId: req.user?.id ?? null,
       });
 
       res.status(200).json(shapeRunDetail(persisted.run, persisted.steps, persisted.evidence));
@@ -69,7 +70,10 @@ testRunsRouter.get(
       return next(new HttpError(400, 'Invalid pagination'));
     }
     try {
-      const { items, total } = await listTestRuns(pool, parsed.data.page, parsed.data.limit);
+      const scope = req.user
+        ? { ownerId: req.user.id, isAdmin: req.user.role === 'admin' }
+        : undefined;
+      const { items, total } = await listTestRuns(pool, parsed.data.page, parsed.data.limit, scope);
       res.json({
         items: items.map(shapeRunSummary),
         page: parsed.data.page,
@@ -91,7 +95,10 @@ testRunsRouter.get(
     const idCheck = UuidParam.safeParse(req.params.id);
     if (!idCheck.success) return next(new HttpError(400, 'Invalid id'));
     try {
-      const run = await getTestRunById(pool, idCheck.data);
+      const scope = req.user
+        ? { ownerId: req.user.id, isAdmin: req.user.role === 'admin' }
+        : undefined;
+      const run = await getTestRunById(pool, idCheck.data, scope);
       if (!run) return next(new HttpError(404, 'Test run not found'));
       const [steps, evidence] = await Promise.all([
         listStepsForRun(pool, run.id),
