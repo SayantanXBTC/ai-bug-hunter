@@ -3,16 +3,37 @@ import { env } from '../config/env.js';
 
 const { Pool } = pg;
 
-export const pool = new Pool({
-  host: env.DATABASE_HOST,
-  port: env.DATABASE_PORT,
-  database: env.DATABASE_NAME,
-  user: env.DATABASE_USER,
-  password: env.DATABASE_PASSWORD,
-  max: 10,
-  idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 5_000,
-});
+export interface PoolConfig {
+  host?: string;
+  port?: number;
+  database?: string;
+  user?: string;
+  password?: string;
+  schema?: string;
+  max?: number;
+}
+
+export function createPool(cfg: PoolConfig = {}): pg.Pool {
+  const p = new Pool({
+    host: cfg.host ?? env.DATABASE_HOST,
+    port: cfg.port ?? env.DATABASE_PORT,
+    database: cfg.database ?? env.DATABASE_NAME,
+    user: cfg.user ?? env.DATABASE_USER,
+    password: cfg.password ?? env.DATABASE_PASSWORD,
+    max: cfg.max ?? 10,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 5_000,
+  });
+  if (cfg.schema) {
+    const ident = cfg.schema.replace(/"/g, '""');
+    p.on('connect', (client) => {
+      void client.query(`SET search_path TO "${ident}", public`);
+    });
+  }
+  return p;
+}
+
+export const pool = createPool();
 
 export interface PingResult {
   reachable: boolean;
@@ -20,10 +41,10 @@ export interface PingResult {
   error?: string;
 }
 
-export async function pingDatabase(): Promise<PingResult> {
+export async function pingDatabase(p: pg.Pool = pool): Promise<PingResult> {
   const started = Date.now();
   try {
-    const client = await pool.connect();
+    const client = await p.connect();
     try {
       await client.query('SELECT 1');
       return { reachable: true, latencyMs: Date.now() - started };
@@ -39,6 +60,6 @@ export async function pingDatabase(): Promise<PingResult> {
   }
 }
 
-export async function closePool(): Promise<void> {
-  await pool.end();
+export async function closePool(p: pg.Pool = pool): Promise<void> {
+  await p.end();
 }

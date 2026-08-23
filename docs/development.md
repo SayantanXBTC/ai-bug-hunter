@@ -117,6 +117,45 @@ When a step fails, the engine automatically attaches an `evidence` package to th
 
 Successful runs skip evidence by default. Pass `evidence: { includeEvidenceOnSuccess: true }` to `new TestExecutor(...)` or the API layer to override. Individual sub-options (`screenshotOnFailure`, `captureConsole`, `captureNetwork`, `capturePageErrors`, `captureDomOnFailure`, size caps) are documented on the `EvidenceOptions` type.
 
+## Database & persistence (Phase 4)
+
+Migrations run automatically at API startup. To apply them manually (e.g. during CI):
+
+```powershell
+npm run migrate --workspace @ai-bug-hunter/api
+```
+
+Output is a JSON summary like `{"applied":["001"],"skipped":[]}`. Migrations are idempotent.
+
+### Environment
+
+Add to your `.env` (already documented in `.env.example`):
+
+```
+ARTIFACT_STORAGE_PATH=./artifacts
+TEST_RUNS_LIST_MAX_LIMIT=100
+```
+
+The `./artifacts` directory is git-ignored and created on demand. Move it out of the repo (e.g. `D:/aibh-artifacts`) for real environments.
+
+### Test database
+
+Repository/persistence integration tests are guarded behind `RUN_DB_TESTS=1`. They connect to your existing `ai_bug_hunter` database using the credentials in `.env`, create a fresh temporary schema per test suite (`tdb_<random>`), run migrations inside it, and drop the schema at the end. They never touch `public` and never destroy developer data.
+
+Run only the DB tests:
+
+```powershell
+$env:RUN_DB_TESTS = "1"; npx vitest run apps/api/src/db apps/api/src/services
+```
+
+Or run the full suite with DB tests enabled:
+
+```powershell
+$env:RUN_DB_TESTS = "1"; npm run test
+```
+
+Without `RUN_DB_TESTS=1`, DB integration tests are skipped so the suite stays fully deterministic offline.
+
 ### Testing evidence locally
 
 The deterministic fixture (`tests/fixtures/simple-app/index.html`) exposes buttons that trigger:

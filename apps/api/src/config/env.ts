@@ -28,6 +28,8 @@ const EnvSchema = z.object({
   DATABASE_NAME: z.string().min(1).default('ai_bug_hunter'),
   DATABASE_USER: z.string().min(1).default('postgres'),
   DATABASE_PASSWORD: z.string().default(''),
+  ARTIFACT_STORAGE_PATH: z.string().min(1).default('./artifacts'),
+  TEST_RUNS_LIST_MAX_LIMIT: z.coerce.number().int().positive().max(200).default(100),
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;

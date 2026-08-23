@@ -1,6 +1,7 @@
 import { createApp } from './app.js';
 import { env } from './config/env.js';
-import { closePool, pingDatabase } from './db/pool.js';
+import { closePool, pingDatabase, pool } from './db/pool.js';
+import { runMigrations } from './db/migrator.js';
 
 async function main(): Promise<void> {
   const app = createApp();
@@ -8,6 +9,13 @@ async function main(): Promise<void> {
   const db = await pingDatabase();
   if (db.reachable) {
 console.log(`[api] PostgreSQL reachable (${db.latencyMs}ms) at ${env.DATABASE_HOST}:${env.DATABASE_PORT}/${env.DATABASE_NAME}`);
+    try {
+      const { applied, skipped } = await runMigrations(pool);
+console.log(`[api] migrations: ${applied.length} applied, ${skipped.length} already present`);
+    } catch (err) {
+console.error('[api] migration failed:', err);
+      process.exit(1);
+    }
   } else {
 console.warn(`[api] PostgreSQL unreachable: ${db.error ?? 'unknown error'}`);
   }

@@ -117,9 +117,42 @@ launch browser
 
 **Security / privacy:** By design, the collector never records passwords, tokens, cookies, request bodies, headers, or environment variables. DOM snapshots and screenshots may still contain sensitive rendered content — treated as sensitive artifacts by future storage layers. The engine logs only counts and IDs, never DOM/screenshot payloads.
 
+## Persistence layer (`apps/api/src/db`, `apps/api/src/artifacts`, `apps/api/src/services`) — Phase 4
+
+Deterministic execution is now durable. The persistence layer is deliberately kept out of `@ai-bug-hunter/test-engine` so the test engine remains usable without PostgreSQL.
+
+```
+ExecutionResult + EvidencePackage
+        ↓
+TestRunPersistenceService  (apps/api/src/services/testRunPersistenceService.ts)
+        ├─→ ArtifactStore (LocalArtifactStore, ARTIFACT_STORAGE_PATH)
+        └─→ Repositories (testRunRepo, evidenceRepo, applicationRepo)
+                ↓
+              pg Pool  (apps/api/src/db/pool.ts)
+                ↓
+             PostgreSQL (ai_bug_hunter)
+```
+
+**Migrations** — `apps/api/src/db/migrator.ts` scans `apps/api/src/db/migrations/*.sql`, applies missing ones inside transactions, and records them in `schema_migrations`. Migrations are idempotent and re-runnable; both auto-run at API startup and manually via `npm run migrate --workspace @ai-bug-hunter/api`.
+
+**Repositories** — Plain SQL functions (`insertTestRun`, `insertTestRunStep`, `insertArtifact`, `insertEvidence`, `listTestRuns`, `getTestRunById`, `listStepsForRun`, `listEvidenceForRun`, `getEvidenceById`, `getArtifactById`, `insertApplication`, `listApplications`). Each accepts either the `Pool` or a `PoolClient`, so callers can compose them inside a transaction.
+
+**TestRunPersistenceService** — Writes artifact bytes first (non-transactional), then opens a Postgres transaction to insert the test run, all steps, all artifacts, and all evidence rows atomically. Rolls back on failure and attempts best-effort cleanup of orphaned artifact files. Never accepts SQL from callers.
+
+**ArtifactStore + LocalArtifactStore** — `save`/`read`/`delete` interface. Local implementation writes files under `ARTIFACT_STORAGE_PATH` (default `./artifacts`, git-ignored) with content-addressed keys `<sha256[0..2]>/<uuid>.<ext>`. All storage keys are server-generated. `read`/`delete` reject absolute paths, `..`, and null bytes.
+
+**Data model** — See [`database.md`](database.md) for full schema, constraints, and indexes.
+
 ## API integration — `POST /api/test-runs`
 
-`apps/api/src/routes/testRuns.ts` validates the request body against `TestDefinitionSchema`, hands it to `new TestExecutor().run(def)`, and returns the resulting `ExecutionResult` JSON. Malformed bodies and unsupported URL schemes yield `400`. No persistence — results (including any attached `evidence` package with base64 screenshot + truncated DOM) are in-memory only. A dedicated evidence endpoint and artifact store arrive in a later phase.
+`apps/api/src/routes/testRuns.ts` validates the request body against `TestDefinitionSchema`, hands it to `new TestExecutor().run(def)`, then passes the resulting `ExecutionResult` (plus `EvidencePackage`) to `TestRunPersistenceService`. The response contains the persisted run ID, step results, and evidence **metadata + download URLs only** — no base64 payloads.
+
+Additional endpoints in Phase 4:
+
+- `GET /api/test-runs?page=&limit=` — paginated list, hard cap `TEST_RUNS_LIST_MAX_LIMIT`.
+- `GET /api/test-runs/:id` — full run with steps and evidence (evidence entries carry `downloadUrl` when they reference a binary artifact).
+- `GET /api/evidence/:id` — streams the underlying artifact with the correct `Content-Type`. Route param is validated as a UUID; storage keys stay server-side and are joined against the artifact root with `..`/absolute-path rejection.
+- `POST /api/applications` and `GET /api/applications` — simple CRUD for applications-under-test.
 
 ## Local test fixture
 
