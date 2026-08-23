@@ -5,6 +5,7 @@ import { EmptyState } from './components/EmptyState.js';
 import { TestRunList } from './components/TestRunList.js';
 import { TestRunDetail } from './components/TestRunDetail.js';
 import { Discovery } from './components/Discovery.js';
+import { AiGeneration } from './components/AiGeneration.js';
 import { useHealth } from './hooks/useHealth.js';
 
 const sections = [
@@ -43,6 +44,9 @@ const sections = [
 export function App(): JSX.Element {
   const health = useHealth();
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [discoveryResult, setDiscoveryResult] = useState<{
+    application: { id: string; baseUrl: string; discoveredAt: string; pages: Array<{ path: string }> };
+  } | null>(null);
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-100">
@@ -61,7 +65,14 @@ export function App(): JSX.Element {
         </header>
 
         <section id="discovery">
-          <Discovery />
+          <Discovery onResult={(r) => setDiscoveryResult(r as never)} />
+        </section>
+
+        <section id="ai-generation">
+          <AiGeneration
+            applicationModel={discoveryResult?.application ?? null}
+            applicationPagePaths={discoveryResult?.application.pages.map((p) => p.path) ?? []}
+          />
         </section>
 
         <section id="test-runs" className="rounded-lg border border-slate-800 bg-slate-900/50 p-5">

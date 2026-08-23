@@ -65,7 +65,11 @@ interface DiscoveryResult {
   warnings: Array<{ kind: string; message: string; url?: string }>;
 }
 
-export function Discovery(): JSX.Element {
+interface DiscoveryProps {
+  onResult?: (r: DiscoveryResult | null) => void;
+}
+
+export function Discovery({ onResult }: DiscoveryProps = {}): JSX.Element {
   const [baseUrl, setBaseUrl] = useState('http://127.0.0.1:5173');
   const [maxPages, setMaxPages] = useState(10);
   const [maxDepth, setMaxDepth] = useState(2);
@@ -79,6 +83,7 @@ export function Discovery(): JSX.Element {
     setError(null);
     setResult(null);
     setSelectedPageIdx(null);
+    onResult?.(null);
     try {
       const res = await fetch('/api/discovery', {
         method: 'POST',
@@ -89,7 +94,9 @@ export function Discovery(): JSX.Element {
         const body = await res.text();
         throw new Error(`HTTP ${res.status}: ${body}`);
       }
-      setResult((await res.json()) as DiscoveryResult);
+      const parsed = (await res.json()) as DiscoveryResult;
+      setResult(parsed);
+      onResult?.(parsed);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'unknown');
     } finally {

@@ -30,6 +30,11 @@ const EnvSchema = z.object({
   DATABASE_PASSWORD: z.string().default(''),
   ARTIFACT_STORAGE_PATH: z.string().min(1).default('./artifacts'),
   TEST_RUNS_LIST_MAX_LIMIT: z.coerce.number().int().positive().max(200).default(100),
+  LLM_PROVIDER: z.enum(['anthropic', 'fake']).default('anthropic'),
+  LLM_MODEL: z.string().min(1).default('claude-sonnet-4-6'),
+  ANTHROPIC_API_KEY: z.string().default(''),
+  AI_MAX_TESTS: z.coerce.number().int().positive().max(50).default(20),
+  AI_PROMPT_MAX_CHARS: z.coerce.number().int().positive().max(200_000).default(30_000),
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;

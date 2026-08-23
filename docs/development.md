@@ -103,6 +103,28 @@ Response is an `ExecutionResult` with `status`, per-step timings, and a normaliz
 
 To silence engine logs during tests, set `TEST_ENGINE_QUIET=1`.
 
+## AI test generation (Phase 6)
+
+`POST /api/ai/generate-tests` turns a discovered `ApplicationModel` into `TestDefinition`s.
+
+```powershell
+curl -s -X POST http://localhost:5000/api/ai/generate-tests `
+  -H "Content-Type: application/json" `
+  -d '{ "applicationModel": { ... }, "goal": "smoke", "maxTests": 3 }'
+```
+
+Set your key in `.env` (never commit it):
+
+```
+LLM_PROVIDER=anthropic
+LLM_MODEL=claude-sonnet-4-6
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Without a key the endpoint returns `status: "provider_error"` HTTP 200 with a safe message — no 500, no secrets exposed. **All tests pass without a real API key**; the test suite uses `FakeLLMProvider`.
+
+The frontend **AI Test Generation** panel: pick a goal, review generated tests (each shows validation status and issues), tick the ones you want, click "Run Selected Tests" — the frontend then posts each valid test to `POST /api/test-runs`. Tests are never auto-executed by the AI endpoint.
+
 ## Application discovery (Phase 5)
 
 `POST /api/discovery` runs a deterministic Chromium crawl and returns an `ApplicationModel`. Example:
