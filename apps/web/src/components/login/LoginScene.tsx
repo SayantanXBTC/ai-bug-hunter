@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { HexGridFloor } from './HexGridFloor.js';
 import { OrbitalPaths } from './OrbitalPaths.js';
-import { OrbLabelSwarm } from './OrbLabelSwarm.js';
+import { ImageStream } from './ImageStream.js';
 import { TopBrand } from './TopBrand.js';
 
 interface LoginSceneProps {
@@ -59,8 +59,8 @@ export function LoginScene({ children }: LoginSceneProps): JSX.Element {
       {/* 4. Orbital paths */}
       <OrbitalPaths />
 
-      {/* 5. Orb + label paired swarm (was ComputationalPods + SystemLabels) */}
-      <OrbLabelSwarm />
+      {/* 5. Image stream — thematic error/failure cards flowing around card */}
+      <ImageStream />
 
       {/* 7. Radial glow behind card */}
       <div
