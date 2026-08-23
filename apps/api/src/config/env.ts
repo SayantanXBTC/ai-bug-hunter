@@ -35,6 +35,10 @@ const EnvSchema = z.object({
   ANTHROPIC_API_KEY: z.string().default(''),
   AI_MAX_TESTS: z.coerce.number().int().positive().max(50).default(20),
   AI_PROMPT_MAX_CHARS: z.coerce.number().int().positive().max(200_000).default(30_000),
+  BUG_INTEL_MAX_RUNS: z.coerce.number().int().positive().max(5_000).default(500),
+  BUG_INTEL_MAX_CANDIDATE_PAIRS: z.coerce.number().int().positive().max(50_000).default(2_000),
+  BUG_INTEL_MAX_AI_COMPARISONS: z.coerce.number().int().nonnegative().max(1_000).default(100),
+  BUG_INTEL_MIN_RESOLUTION_STREAK: z.coerce.number().int().positive().max(50).default(3),
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;

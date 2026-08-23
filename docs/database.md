@@ -99,6 +99,46 @@ Binary artifact metadata. The artifact bytes themselves live under `ARTIFACT_STO
 
 Index: `ix_artifacts_sha256`.
 
+### `bug_clusters` (Phase 8)
+One row per unique failure fingerprint. Identity via `fingerprint_key` (deterministic hash of primary signature).
+
+| column                    | type         | notes                                                                        |
+| ------------------------- | ------------ | ---------------------------------------------------------------------------- |
+| id                        | UUID PK      |                                                                              |
+| fingerprint_key           | TEXT UNIQUE  | idempotency key                                                              |
+| title                     | TEXT         | deterministic, e.g. `HTTP 500 on /api/orders`                                |
+| description               | TEXT         | primary failure signature                                                    |
+| status                    | TEXT CHECK   | `open` | `recurring` | `regressed` | `resolved` | `inconclusive`             |
+| severity                  | TEXT CHECK   | `critical` | `high` | `medium` | `low` | `none` | `unknown`                 |
+| confidence                | NUMERIC(3,2) | 0..1                                                                         |
+| first_seen_at             | TIMESTAMPTZ  | min of member `started_at`                                                   |
+| last_seen_at              | TIMESTAMPTZ  | max of member `started_at`                                                   |
+| occurrence_count          | INTEGER      |                                                                              |
+| affected_test_count       | INTEGER      |                                                                              |
+| affected_page_count       | INTEGER      |                                                                              |
+| affected_endpoint_count   | INTEGER      |                                                                              |
+| regression_status         | TEXT CHECK   | `first_seen` | `recurring` | `regressed` | `resolved` | `inconclusive`      |
+| primary_run_id            | UUID FK      | → test_runs(id) ON DELETE SET NULL                                           |
+| primary_investigation_id  | UUID         | reference to the primary investigation (if any)                              |
+| primary_failure_signature | TEXT         |                                                                              |
+| root_cause_summary        | TEXT         | copied from primary investigation summary if present                         |
+| created_at, updated_at    | TIMESTAMPTZ  |                                                                              |
+
+Indexes: `ix_bug_clusters_status`, `ix_bug_clusters_last_seen (DESC)`, `ix_bug_clusters_regression_status`.
+
+### `bug_cluster_members` (Phase 8)
+Membership per run — composite PK enforces one row per (cluster, run).
+
+| column            | type         | notes                                            |
+| ----------------- | ------------ | ------------------------------------------------ |
+| cluster_id        | UUID FK      | → bug_clusters(id) ON DELETE CASCADE             |
+| test_run_id       | UUID FK      | → test_runs(id) ON DELETE CASCADE                |
+| similarity_score  | NUMERIC(4,3) | 0..1                                             |
+| membership_reason | JSONB        | array of `{name, contribution, explanation}`     |
+| created_at        | TIMESTAMPTZ  |                                                  |
+
+Primary key: `(cluster_id, test_run_id)`. Index: `ix_bug_cluster_members_test_run`.
+
 ### `investigations` (Phase 7)
 One AI failure investigation per test run.
 

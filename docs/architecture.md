@@ -54,6 +54,35 @@ Framework-agnostic TypeScript types and small helpers used by both frontend and 
 
 Phase 1 connects to an existing `ai_bug_hunter` database on a native Windows PostgreSQL 18.6 install. The API does not create, drop, or migrate the database. It only verifies connectivity (`SELECT 1`) and exposes reachability via the detailed health endpoint. No application tables are created in Phase 1.
 
+## Bug intelligence (`apps/api/src/ai/intelligence/`) — Phase 8
+
+Cross-run failure clustering + regression intelligence. Hybrid architecture: deterministic fingerprints + explainable weighted similarity + union-find; LLM only for ambiguous pairs.
+
+```
+failed test_runs
+    ↓ buildFingerprint (per run — deterministic)
+    ↓ blocking keys (endpoint, page, category, area, console, selector, err)
+    ↓ candidate pairs (bounded by BUG_INTEL_MAX_CANDIDATE_PAIRS)
+    ↓ scoreSimilarity (weighted, explainable, 0..1)
+    ├─ strong (≥ 0.60) → UnionFind.union
+    ├─ possible (0.35..0.60) → AiPairComparator (bounded)
+    └─ unlikely (< 0.35) → drop
+    ↓ connected components
+    ↓ ClusterDrafts (metrics, regression status, membership reasons)
+    ↓ UPSERT bug_clusters (identity = fingerprint_hash)
+    ↓ UPSERT bug_cluster_members (composite PK)
+```
+
+**Endpoints:** `POST /api/ai/bug-intelligence/analyze` (bounded, optional `since` / `testRunIds`), `GET /api/ai/bug-intelligence/clusters` (paginated + filtered by status/severity/regression), `GET /api/ai/bug-intelligence/clusters/:id` (cluster + members + timeline).
+
+**AI usage:** capped at `BUG_INTEL_MAX_AI_COMPARISONS = 100` per analysis. The analyze response reports `deterministicStrongPairs` vs `aiComparisons` — auditable proof that the LLM is not blindly consulted.
+
+**Persistence:** `bug_clusters` (UNIQUE fingerprint_key) + `bug_cluster_members` (composite PK). Migration `003_bug_intelligence.sql`. Membership reasons stored as JSONB — every merge is explainable.
+
+**Regression logic:** deterministic. `regressed` requires ≥ 2 prior passes; `resolved` requires `BUG_INTEL_MIN_RESOLUTION_STREAK` (default 3) consecutive passes after the last cluster failure.
+
+Full detail: [`bug-intelligence.md`](bug-intelligence.md).
+
 ## AI failure investigation (`apps/api/src/ai/investigation/`) — Phase 7
 
 Second LLM use case. Takes a persisted failed `test_run` and produces an evidence-backed `InvestigationReport`. Reuses the Phase 6 `LLMProvider` abstraction (extended with optional multimodal image input).

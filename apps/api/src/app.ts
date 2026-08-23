@@ -8,6 +8,7 @@ import { evidenceRouter } from './routes/evidence.js';
 import { discoveryRouter } from './routes/discovery.js';
 import { aiRouter } from './routes/ai.js';
 import { investigationRouter } from './routes/investigation.js';
+import { bugIntelligenceRouter } from './routes/bugIntelligence.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 export function createApp(): Express {
@@ -24,6 +25,7 @@ export function createApp(): Express {
   app.use('/api', discoveryRouter);
   app.use('/api', aiRouter);
   app.use('/api', investigationRouter);
+  app.use('/api', bugIntelligenceRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

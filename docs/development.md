@@ -103,6 +103,29 @@ Response is an `ExecutionResult` with `status`, per-step timings, and a normaliz
 
 To silence engine logs during tests, set `TEST_ENGINE_QUIET=1`.
 
+## Bug intelligence (Phase 8)
+
+`POST /api/ai/bug-intelligence/analyze` — analyze failed runs (bounded), cluster by fingerprint + weighted similarity, upsert results. Accepts optional `{ since: "<ISO>" }` or `{ testRunIds: [...] }`; defaults to recent failed runs.
+
+`GET /api/ai/bug-intelligence/clusters?page=&limit=&status=&severity=&regressionStatus=` — paginated cluster list.
+
+`GET /api/ai/bug-intelligence/clusters/:id` — cluster + members + timeline.
+
+Migration `003_bug_intelligence.sql` — apply via `npm run migrate --workspace @ai-bug-hunter/api`. Idempotent.
+
+Environment knobs (defaults in `.env.example`):
+
+```
+BUG_INTEL_MAX_RUNS=500
+BUG_INTEL_MAX_CANDIDATE_PAIRS=2000
+BUG_INTEL_MAX_AI_COMPARISONS=100
+BUG_INTEL_MIN_RESOLUTION_STREAK=3
+```
+
+Analyze response reports `deterministicStrongPairs` vs `aiComparisons` so you can see the LLM is only used for ambiguous pairs. Without a real `ANTHROPIC_API_KEY` the pipeline runs deterministic-only.
+
+Frontend: **Bug Intelligence** panel with counts by status, Analyze button, cluster list, click-through detail (signature + members + timeline).
+
 ## AI failure investigation (Phase 7)
 
 `POST /api/ai/investigate/:testRunId` — investigate a failed/errored run. Optional `?force=true` regenerates. `GET` retrieves the persisted investigation.
