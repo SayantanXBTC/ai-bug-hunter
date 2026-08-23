@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { LLMProviderError, type LLMProvider, type LLMRequest, type LLMResponse } from './llmProvider.js';
+import { recordAiCall } from '../metrics/aiMetrics.js';
 
 export interface AnthropicProviderOptions {
   apiKey: string;
@@ -38,6 +39,8 @@ export class AnthropicProvider implements LLMProvider {
     }
     content.push({ type: 'text', text: req.userPrompt });
 
+    const operation = req.operation ?? 'generate';
+    const started = Date.now();
     let response: Anthropic.Message;
     try {
       response = await this.client.messages.create({
@@ -47,6 +50,13 @@ export class AnthropicProvider implements LLMProvider {
         messages: [{ role: 'user', content }],
       });
     } catch (err) {
+      recordAiCall({
+        provider: this.name,
+        model: req.model,
+        operation,
+        latencyMs: Date.now() - started,
+        success: false,
+      });
       throw classify(err);
     }
 
@@ -56,14 +66,36 @@ export class AnthropicProvider implements LLMProvider {
       .join('\n');
 
     if (!text) {
+      recordAiCall({
+        provider: this.name,
+        model: req.model,
+        operation,
+        latencyMs: Date.now() - started,
+        success: false,
+      });
       throw new LLMProviderError('Empty response from provider', 'invalid_response');
     }
+
+    const inputTokens = response.usage?.input_tokens;
+    const outputTokens = response.usage?.output_tokens;
+    const totalTokens =
+      inputTokens !== undefined || outputTokens !== undefined
+        ? (inputTokens ?? 0) + (outputTokens ?? 0)
+        : undefined;
+    recordAiCall({
+      provider: this.name,
+      model: response.model,
+      operation,
+      latencyMs: Date.now() - started,
+      success: true,
+      tokens: totalTokens,
+    });
 
     return {
       content: text,
       usage: {
-        inputTokens: response.usage?.input_tokens,
-        outputTokens: response.usage?.output_tokens,
+        inputTokens,
+        outputTokens,
       },
       provider: this.name,
       model: response.model,

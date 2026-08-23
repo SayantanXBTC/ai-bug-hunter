@@ -6,7 +6,8 @@
   "description": "AI Bug Hunter — AI-powered autonomous web application testing and bug intelligence platform (Phase 1: Foundation).",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "tests/demo-app"
   ],
   "scripts": {
     "dev": "npm-run-all --parallel dev:api dev:web",
@@ -21,7 +22,10 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "demo": "npm run start --workspace @ai-bug-hunter/demo-app",
+    "dev:demo": "npm run dev --workspace @ai-bug-hunter/demo-app",
+    "ci-cli": "npm run start --workspace @ai-bug-hunter/ci-cli --"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

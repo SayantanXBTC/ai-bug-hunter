@@ -7,6 +7,10 @@ import { getConfiguredProvider } from '../ai/providerFactory.js';
 import { LLMProviderError } from '../ai/providers/llmProvider.js';
 import type { TestGenerationInput } from '../ai/aiTypes.js';
 import type { ApplicationModel } from '@ai-bug-hunter/test-engine';
+import { requireRole } from '../middleware/authenticate.js';
+import { createRateLimiter, userKey } from '../middleware/rateLimit.js';
+
+const aiGenLimiter = createRateLimiter({ windowMs: 60 * 60_000, max: 20, keyFn: userKey });
 
 export const aiRouter = Router();
 
@@ -25,6 +29,8 @@ const RequestSchema = z.object({
 
 aiRouter.post(
   '/ai/generate-tests',
+  requireRole('qa_engineer'),
+  aiGenLimiter,
   async (req: Request, res: Response, next: NextFunction) => {
     const parsed = RequestSchema.safeParse(req.body);
     if (!parsed.success) {

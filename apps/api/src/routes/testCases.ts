@@ -3,12 +3,29 @@ import { z } from 'zod';
 import { TestDefinitionSchema } from '@ai-bug-hunter/test-engine';
 import { HttpError } from '../middleware/errorHandler.js';
 import { pool } from '../db/pool.js';
+import { assertTargetUrlAllowed, TargetUrlError } from '../security/targetUrlPolicy.js';
+import type { TestDefinition } from '@ai-bug-hunter/test-engine';
+
+function validateDefinitionUrls(def: TestDefinition): string | null {
+  try {
+    assertTargetUrlAllowed(def.targetUrl);
+    for (let i = 0; i < def.steps.length; i += 1) {
+      const step = def.steps[i]!;
+      if (step.action === 'navigate') assertTargetUrlAllowed(step.url);
+    }
+    return null;
+  } catch (err) {
+    if (err instanceof TargetUrlError) return `${err.code}: ${err.message}`;
+    return err instanceof Error ? err.message : 'invalid url';
+  }
+}
 import {
   getTestCaseById,
   insertTestCase,
   listTestCases,
   updateTestCase,
 } from '../db/repositories/testCaseRepo.js';
+import { requireRole, requireUser } from '../middleware/authenticate.js';
 
 export const testCasesRouter = Router();
 
@@ -43,12 +60,14 @@ const ListSchema = z.object({
 
 const UuidParam = z.string().uuid();
 
-testCasesRouter.post('/test-cases', async (req: Request, res: Response, next: NextFunction) => {
+testCasesRouter.post('/test-cases', requireRole('qa_engineer'), async (req: Request, res: Response, next: NextFunction) => {
   const parsed = CreateSchema.safeParse(req.body);
   if (!parsed.success) {
     const detail = parsed.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`).join('; ');
     return next(new HttpError(400, `Invalid test case: ${detail}`));
   }
+  const urlErr = validateDefinitionUrls(parsed.data.definition);
+  if (urlErr) return next(new HttpError(400, `Invalid target URL: ${urlErr}`));
   try {
     const row = await insertTestCase(pool, {
       ...parsed.data,
@@ -60,7 +79,7 @@ testCasesRouter.post('/test-cases', async (req: Request, res: Response, next: Ne
   }
 });
 
-testCasesRouter.get('/test-cases', async (req: Request, res: Response, next: NextFunction) => {
+testCasesRouter.get('/test-cases', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   const parsed = ListSchema.safeParse(req.query);
   if (!parsed.success) return next(new HttpError(400, 'Invalid query'));
   try {
@@ -80,7 +99,7 @@ testCasesRouter.get('/test-cases', async (req: Request, res: Response, next: Nex
   }
 });
 
-testCasesRouter.get('/test-cases/:id', async (req: Request, res: Response, next: NextFunction) => {
+testCasesRouter.get('/test-cases/:id', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   const id = UuidParam.safeParse(req.params.id);
   if (!id.success) return next(new HttpError(400, 'Invalid id'));
   try {
@@ -92,11 +111,15 @@ testCasesRouter.get('/test-cases/:id', async (req: Request, res: Response, next:
   }
 });
 
-testCasesRouter.patch('/test-cases/:id', async (req: Request, res: Response, next: NextFunction) => {
+testCasesRouter.patch('/test-cases/:id', requireRole('qa_engineer'), async (req: Request, res: Response, next: NextFunction) => {
   const id = UuidParam.safeParse(req.params.id);
   if (!id.success) return next(new HttpError(400, 'Invalid id'));
   const parsed = PatchSchema.safeParse(req.body);
   if (!parsed.success) return next(new HttpError(400, 'Invalid patch'));
+  if (parsed.data.definition) {
+    const urlErr = validateDefinitionUrls(parsed.data.definition);
+    if (urlErr) return next(new HttpError(400, `Invalid target URL: ${urlErr}`));
+  }
   try {
     const patch: Parameters<typeof updateTestCase>[2] = {};
     if (parsed.data.name !== undefined) patch.name = parsed.data.name;

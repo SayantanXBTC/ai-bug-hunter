@@ -14,6 +14,7 @@ import {
   getInvestigationByTestRunId,
   upsertInvestigation,
 } from '../db/repositories/investigationRepo.js';
+import { requireRole, requireUser } from '../middleware/authenticate.js';
 
 export const investigationRouter = Router();
 
@@ -23,6 +24,7 @@ const ForceQuery = z.object({ force: z.enum(['true', 'false']).optional() });
 
 investigationRouter.get(
   '/ai/investigate/:testRunId',
+  requireUser,
   async (req: Request, res: Response, next: NextFunction) => {
     const parsed = UuidParam.safeParse(req.params.testRunId);
     if (!parsed.success) return next(new HttpError(400, 'Invalid test run id'));
@@ -38,6 +40,7 @@ investigationRouter.get(
 
 investigationRouter.post(
   '/ai/investigate/:testRunId',
+  requireRole('qa_engineer'),
   async (req: Request, res: Response, next: NextFunction) => {
     const idCheck = UuidParam.safeParse(req.params.testRunId);
     if (!idCheck.success) return next(new HttpError(400, 'Invalid test run id'));

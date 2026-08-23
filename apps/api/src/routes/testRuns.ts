@@ -13,6 +13,7 @@ import {
 } from '../db/repositories/testRunRepo.js';
 import { listEvidenceForRun } from '../db/repositories/evidenceRepo.js';
 import { getArtifactById } from '../db/repositories/evidenceRepo.js';
+import { requireRole, requireUser } from '../middleware/authenticate.js';
 
 export const testRunsRouter = Router();
 
@@ -28,6 +29,7 @@ const CreateSchema = TestDefinitionSchema.and(
 
 testRunsRouter.post(
   '/test-runs',
+  requireRole('qa_engineer'),
   async (req: Request, res: Response, next: NextFunction) => {
     const parsed = CreateSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -60,6 +62,7 @@ const ListQuery = z.object({
 
 testRunsRouter.get(
   '/test-runs',
+  requireUser,
   async (req: Request, res: Response, next: NextFunction) => {
     const parsed = ListQuery.safeParse(req.query);
     if (!parsed.success) {
@@ -83,6 +86,7 @@ const UuidParam = z.string().uuid();
 
 testRunsRouter.get(
   '/test-runs/:id',
+  requireUser,
   async (req: Request, res: Response, next: NextFunction) => {
     const idCheck = UuidParam.safeParse(req.params.id);
     if (!idCheck.success) return next(new HttpError(400, 'Invalid id'));

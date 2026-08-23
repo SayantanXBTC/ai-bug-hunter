@@ -12,16 +12,32 @@ import { bugIntelligenceRouter } from './routes/bugIntelligence.js';
 import { testCasesRouter } from './routes/testCases.js';
 import { testReliabilityRouter } from './routes/testReliability.js';
 import { regressionCampaignsRouter } from './routes/regressionCampaigns.js';
+import { authRouter } from './routes/auth.js';
+import { ciTokensRouter } from './routes/ciTokens.js';
+import { ciRouter } from './routes/ci.js';
+import { adminRetentionRouter } from './routes/adminRetention.js';
+import { adminSettingsRouter } from './routes/adminSettings.js';
+import { dashboardRouter } from './routes/dashboard.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { requestIdMiddleware } from './middleware/requestId.js';
+import { requestLoggerMiddleware } from './middleware/requestLogger.js';
+import { securityHeadersMiddleware } from './middleware/securityHeaders.js';
+import { authenticate } from './middleware/authenticate.js';
 
 export function createApp(): Express {
   const app = express();
 
   app.disable('x-powered-by');
+  // Ordering: id → security headers → cors → body parser → logger → auth → routes.
+  app.use(requestIdMiddleware);
+  app.use(securityHeadersMiddleware);
   app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
   app.use(express.json({ limit: '2mb' }));
+  app.use(requestLoggerMiddleware);
+  app.use(authenticate);
 
   app.use('/api', healthRouter);
+  app.use('/api', authRouter);
   app.use('/api', testRunsRouter);
   app.use('/api', applicationsRouter);
   app.use('/api', evidenceRouter);
@@ -32,6 +48,11 @@ export function createApp(): Express {
   app.use('/api', testCasesRouter);
   app.use('/api', testReliabilityRouter);
   app.use('/api', regressionCampaignsRouter);
+  app.use('/api', ciTokensRouter);
+  app.use('/api', ciRouter);
+  app.use('/api', adminRetentionRouter);
+  app.use('/api', adminSettingsRouter);
+  app.use('/api', dashboardRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

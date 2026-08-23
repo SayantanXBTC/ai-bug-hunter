@@ -30,6 +30,15 @@ describe('GET /api/health/detailed', () => {
     expect(res.body.status).toBe('ok');
     expect(res.body.database.reachable).toBe(true);
     expect(res.body.service).toBe(API_SERVICE_NAME);
+    expect(res.body.llmProvider).toBeDefined();
+    expect(['configured', 'fake_fallback', 'disabled', 'error']).toContain(res.body.llmProvider.status);
+    expect(res.body.artifactStorage).toBeDefined();
+    expect(typeof res.body.artifactStorage.ok).toBe('boolean');
+    expect(res.body.browserAvailable).toBeDefined();
+    // No secret echo
+    const s = JSON.stringify(res.body);
+    expect(s).not.toContain('ANTHROPIC_API_KEY');
+    expect(s).not.toMatch(/sk-[A-Za-z0-9]+/);
   });
 
   it('returns degraded when DB unreachable', async () => {
@@ -52,6 +61,7 @@ describe('unknown route', () => {
     const app = createApp();
     const res = await request(app).get('/api/does-not-exist');
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ error: 'Not Found' });
+    expect(res.body.error.code).toBe('not_found');
+    expect(res.body.error.message).toBe('Not Found');
   });
 });

@@ -2,7 +2,87 @@
 
 ## Overview
 
-AI Bug Hunter is an AI-powered autonomous web application testing and bug intelligence platform. This document describes the Phase 1 foundation and outlines where later capabilities will attach.
+AI Bug Hunter is an AI-powered autonomous web application testing and bug intelligence platform. This document describes the Phase 1 foundation and outlines where later capabilities have been attached through Phase 10.
+
+## System diagram (Phase 10)
+
+```
+                ┌──────────────────────────────┐
+                │             USER              │
+                │  (browser + optional CI job)  │
+                └──────────────┬───────────────┘
+                               │ HTTP
+                ┌──────────────▼───────────────┐
+                │       apps/web (React)        │
+                │  Login • Dashboard • Settings │
+                │  CiTokens • Discovery • Runs  │
+                └──────────────┬───────────────┘
+                               │
+                ┌──────────────▼───────────────┐
+                │      apps/api (Express)       │
+                │  Auth (cookies + scrypt)      │
+                │  Role guards • Rate limits    │
+                │  Request-Id • SSRF policy     │
+                │  AI metrics • Admin settings  │
+                └───┬────────┬──────────┬──────┘
+                    │        │          │
+     ┌──────────────▼──┐  ┌──▼──────┐ ┌─▼─────────────┐
+     │  Discovery      │  │  Test    │ │  AI layer     │
+     │  (crawler)      │  │  Engine  │ │  (LLMProvider)│
+     └──────┬──────────┘  └────┬─────┘ └────┬──────────┘
+            │                  │            │
+            │            ┌─────▼─────┐  ┌───▼──────────┐
+            │            │ Playwright│  │  Claude API   │
+            │            │  Chromium │  │  (optional)   │
+            │            └─────┬─────┘  └───┬──────────┘
+            │                  │            │
+     ┌──────▼──────────────────▼────────────▼──────────┐
+     │                    Evidence                       │
+     │      (DOM, screenshot, console, network)          │
+     └──────┬────────────────────────────────┬──────────┘
+            │                                │
+    ┌───────▼─────────┐              ┌───────▼──────────┐
+    │ PostgreSQL       │              │  Artifacts        │
+    │ (users, sessions,│              │ LocalArtifactStore│
+    │  test_cases,     │              │  content-addressed│
+    │  test_runs,      │              └──────────────────┘
+    │  evidence,       │
+    │  investigations, │
+    │  bug_clusters,   │
+    │  reliability,    │
+    │  regression      │
+    │  campaigns,      │
+    │  ci_tokens)      │
+    └───────┬──────────┘
+            │
+    ┌───────▼──────────┐          ┌────────────────────┐
+    │ Bug Intelligence │──────────▶│  Regression        │
+    │  (fingerprint,   │           │  (risk-based       │
+    │   clustering)    │           │   selection +      │
+    └──────────────────┘           │   quality gate)    │
+                                   └─────────┬──────────┘
+                                             │
+                                    ┌────────▼────────┐
+                                    │ CI Quality Gate │
+                                    │ /api/ci/…       │
+                                    │ CLI + Actions   │
+                                    └─────────────────┘
+```
+
+Phase 10 additions layered on top of the earlier phases:
+
+- Cookie-based authentication with scrypt password hashing and session table.
+- Role-based authorization: `admin`, `qa_engineer`, `viewer`.
+- CI quality gate: token-scoped `POST /api/ci/regression` and
+  `GET /api/ci/regression/:id/result` (see [`ci-integration.md`](ci-integration.md)).
+- Executive dashboard: `GET /api/dashboard/overview` and trends.
+- SSRF protection via `targetUrlPolicy`; applied to every outbound URL.
+- Per-request `X-Request-Id` middleware and structured JSON error envelope.
+- AI call metrics (`getAiMetricsSnapshot`) and admin settings surface.
+- Documentation: [`security.md`](security.md), [`ai-architecture.md`](ai-architecture.md),
+  [`ci-integration.md`](ci-integration.md).
+
+This document describes the Phase 1 foundation and outlines where later capabilities will attach.
 
 The system is organized as a TypeScript npm monorepo:
 

@@ -1,50 +1,86 @@
 # AI Bug Hunter
 
-AI Bug Hunter is an AI-powered autonomous web application testing and bug intelligence platform.
+**Status:** Phases 1–10 complete.
 
-> **Status: Phase 9 — Flaky detection & regression campaigns.** Phases 1–8 complete. Phase 9 adds two layers: (a) deterministic per-test reliability snapshots (stable / suspected_flaky / flaky / unstable / insufficient_data) that avoid classifying stable-broken tests as flaky by weighting a `single_bug_cluster_domination` signal; (b) regression campaigns with explainable risk scoring (failure_rate, regression_risk from Phase 8 clusters, priority, recency, flaky_penalty), three selection strategies (`all_enabled`, `smoke`, `risk_based`), and a mandatory human-review boundary (create → preview → explicit Run). Execution reuses Phase 2 `TestExecutor` sequentially, persists via Phase 4, auto-investigates failed runs via Phase 7 (bounded), and triggers incremental Phase 8 bug intelligence on new runs. Campaign quality is deterministic (healthy / degraded / failed / inconclusive) — the LLM never decides pass/fail. Cancellation is cooperative — no process is force-killed, no Chromium leaks. New tables: `test_reliability_snapshots`, `regression_campaigns`, `regression_campaign_tests`; `test_cases` extended (migration `004`). History below.
->
-> **Status: Phase 8 — Bug intelligence & failure clustering.** Phases 1–7 complete. Phase 8 adds cross-run failure clustering via a hybrid pipeline: deterministic `FailureFingerprint`s + weighted explainable similarity + union-find first, LLM only for ambiguous pairs (bounded). Every cluster carries deterministic metrics (occurrence count, affected tests/pages/endpoints, first/last seen), a `status` and `regression_status` derived from real historical passes/failures, and JSONB membership reasons so every merge is auditable. New endpoints: `POST /api/ai/bug-intelligence/analyze`, `GET /api/ai/bug-intelligence/clusters`, `GET /api/ai/bug-intelligence/clusters/:id`. New tables: `bug_clusters`, `bug_cluster_members` (migration `003`). Frontend Bug Intelligence panel shows status counts + clickable clusters + timeline. History below.
->
-> **Status: Phase 7 — AI failure investigation & root-cause analysis.** Phases 1–6 complete. Phase 7 introduces the investigation engine: `POST /api/ai/investigate/:testRunId` takes a persisted failed run + its evidence + recent history and produces an evidence-backed `InvestigationReport` (classification, severity, confidence, likely root cause, observed facts, hypotheses with per-hypothesis confidence, supporting evidence references, reproduction steps derived from the actual test definition, recommended next steps). **The LLM only proposes.** Deterministic code strips any invented evidence IDs, fabricated step indices, or invented facts before the report is returned or persisted. Reports live in a new `investigations` table (unique per test run). The frontend renders investigations under each failed test run — "Likely root cause" + confidence percentage, never absolute claims. History below.
->
-> **Status: Phase 6 — AI test generation.** Phases 1–5 complete. Phase 6 introduces the first LLM into the system behind a strict provider abstraction (`LLMProvider` interface, `AnthropicProvider` isolates `@anthropic-ai/sdk`, `FakeLLMProvider` for tests). `POST /api/ai/generate-tests` accepts a discovered `ApplicationModel`, sends a bounded compacted context to the model, and returns strictly validated `TestDefinition`s. **The LLM does not control Playwright** — outputs go through JSON parse → Zod → business rules (selector must exist in model, URL must be safe + in-scope, action must be supported, duplicates flagged) before an execution API call is even possible, and the frontend requires an explicit user click to run any generated test. History below.
->
-> **Status: Phase 5 — Application discovery engine.** Phases 1–4 complete. Phase 5 adds a deterministic Chromium-based crawler that produces a compact, JSON-serializable `ApplicationModel` (pages, links, forms, interactive elements, ranked selector candidates, bounded accessibility snapshot) via `POST /api/discovery`. The output is designed for a future LLM to consume directly — no Playwright objects leak, no field values are captured, and scope/protocol filters prevent following external or unsafe URLs. **The LLM layer is intentionally not implemented yet.** History below.
->
-> **Status: Phase 4 — Test run & evidence persistence.** Phases 1–3 (foundation, Playwright execution engine, evidence collection) are complete. Phase 4 makes execution history durable: PostgreSQL now stores applications, test cases, test runs, per-step results, and evidence metadata; binary artifacts (screenshots, DOM snapshots) live on the filesystem under a git-ignored `ARTIFACT_STORAGE_PATH`, referenced by content-addressed keys with SHA-256 checksums. New endpoints: `GET /api/test-runs`, `GET /api/test-runs/:id`, `GET /api/evidence/:id`, `POST/GET /api/applications`. **AI investigation is still not implemented** — the persistence layer is the substrate a future AI engine will consume.
+## 1. What is AI Bug Hunter
 
-## Architecture
+AI Bug Hunter is an AI-powered autonomous web application testing and bug
+intelligence platform. It discovers a target application, generates candidate
+tests, executes them under Playwright, collects rich evidence, clusters
+failures across runs, investigates root causes with an LLM, tracks reliability,
+runs risk-based regression campaigns, and gates CI with a deterministic quality
+verdict.
 
-A TypeScript npm monorepo:
+## 2. Why it exists
 
-- `apps/web` — React + Vite + Tailwind CSS dashboard.
-- `apps/api` — Node.js + Express + TypeScript API (exposes `/api/health` and `/api/test-runs`).
-- `packages/shared` — Shared TypeScript types (e.g. the API health contract).
-- `packages/test-engine` — Playwright-based browser execution engine (Phase 2).
-- `tests/fixtures/simple-app` — Local HTML fixture used by browser tests (offline, deterministic).
-- `docs/` — Architecture and development documentation.
-- `.github/workflows/ci.yml` — Lint, typecheck, test, build pipeline.
+Traditional test suites rot silently and traditional bug trackers duplicate
+noise. AI Bug Hunter puts a deterministic backbone under an AI layer:
+Playwright and PostgreSQL own execution and truth; Claude proposes tests,
+hypotheses, and semantic comparisons — always behind a strict provider
+interface with post-validation. The LLM never touches Playwright, never
+decides pass/fail, and never fabricates evidence.
 
-See [`docs/architecture.md`](docs/architecture.md) for details.
+## 3. Architecture
 
-## Technology stack
+TypeScript npm monorepo with clear seams:
 
-| Layer          | Tech                                         |
-| -------------- | -------------------------------------------- |
-| Frontend       | React 18, TypeScript, Vite, Tailwind CSS     |
-| Backend        | Node.js 20+, Express 4, TypeScript           |
-| Database       | PostgreSQL 18.6 (native Windows install)     |
-| DB client      | `pg` (node-postgres) with pooled connections |
-| Validation     | Zod (environment configuration)              |
-| Browser engine | Playwright (Chromium in Phase 2)             |
-| Testing        | Vitest, Supertest, Testing Library           |
-| Code quality   | ESLint (flat config), Prettier               |
-| Tooling        | npm workspaces, TypeScript project references |
+- `apps/web` — React + Vite + Tailwind dashboard (Login, Overview, Settings,
+  CI Tokens, Discovery, Runs, Bug Intelligence, Reliability, Campaigns).
+- `apps/api` — Express + TypeScript API with cookie sessions, role guards,
+  rate limits, SSRF policy, request IDs, structured errors, admin settings,
+  AI metrics.
+- `packages/test-engine` — Playwright-based discovery + execution engine.
+  Nothing else may import Playwright directly.
+- `packages/shared` — Cross-cutting TypeScript types.
+- `packages/ci-cli` — `ai-bug-hunter-ci` binary for CI pipelines.
+- `tests/demo-app` — Standalone Express+HTML target with switchable
+  deterministic bugs (`normal | buggy | flaky`).
+- `docs/` — Full documentation.
 
-## Installation
+See [`docs/architecture.md`](docs/architecture.md) for the Phase-10 diagram.
 
-Requires Node.js 20+ and a running local PostgreSQL 18.6 with an existing `ai_bug_hunter` database.
+## 4. Features
+
+- Deterministic Chromium crawler → `ApplicationModel` (pages, forms,
+  elements, ranked selectors, accessibility).
+- AI test generation, provider-abstracted, output-validated by Zod + business
+  rules.
+- Test execution with per-step results, screenshots, DOM snapshots, console,
+  network metadata; artifacts content-addressed on disk.
+- Persistence: applications, test cases, runs, steps, evidence,
+  investigations, bug clusters, reliability snapshots, regression campaigns,
+  users, sessions, CI tokens.
+- AI failure investigation anchored to deterministic `ObservedFacts`.
+- Cross-run bug intelligence: fingerprints + explainable similarity + bounded
+  LLM comparator + union-find clustering + deterministic regression /
+  resolution status.
+- Reliability layer: `stable | suspected_flaky | flaky | unstable |
+  insufficient_data` with an explicit anti-false-positive signal for
+  stable-broken tests.
+- Risk-based regression campaigns with an explicit human-review boundary and
+  a deterministic quality gate (`healthy | degraded | failed | inconclusive`).
+- Cookie authentication, role guards, CI tokens, SSRF policy, rate limits,
+  structured request IDs, admin settings, opt-in retention.
+- CI quality gate + CLI + GitHub Actions / GitLab / Jenkins recipes.
+
+## 5. Technology stack
+
+| Layer          | Tech                                                    |
+| -------------- | ------------------------------------------------------- |
+| Frontend       | React 18, TypeScript, Vite, Tailwind CSS                |
+| Backend        | Node.js 20+, Express 4, TypeScript                      |
+| Auth           | Cookie sessions + scrypt password hashing               |
+| CI surface     | Bearer tokens (SHA-256 hashed), CLI + `curl` examples   |
+| Database       | PostgreSQL 18.6                                         |
+| DB client      | `pg` (node-postgres) pooled                             |
+| Validation     | Zod (env + LLM outputs)                                 |
+| Browser engine | Playwright (Chromium)                                   |
+| AI             | `@anthropic-ai/sdk` (isolated) + `FakeLLMProvider`      |
+| Testing        | Vitest, Supertest, Testing Library                      |
+| Code quality   | ESLint (flat config), Prettier                          |
+| Tooling        | npm workspaces, TypeScript project references           |
+
+## 6. Quick start
 
 ```powershell
 git clone <repo> ai-bug-hunter
@@ -52,48 +88,181 @@ cd ai-bug-hunter
 npm install
 npx playwright install chromium
 Copy-Item .env.example .env
-# Edit .env and set DATABASE_PASSWORD
+# Edit .env: set DATABASE_PASSWORD, optionally ANTHROPIC_API_KEY
+
+npm run dev            # api + web
+npm run demo           # demo target on http://localhost:4000
 ```
 
-## Configuration
+## 7. Environment variables
 
-Environment variables are documented in [`docs/development.md`](docs/development.md) and validated at API startup. `.env` is git-ignored; never commit credentials.
+| Name | Default | Notes |
+| --- | --- | --- |
+| `NODE_ENV` | `development` | `development | test | production` |
+| `API_PORT` | `5000` | |
+| `FRONTEND_URL` | `http://localhost:5173` | CORS origin |
+| `DATABASE_HOST` | `127.0.0.1` | |
+| `DATABASE_PORT` | `5432` | |
+| `DATABASE_NAME` | `ai_bug_hunter` | |
+| `DATABASE_USER` | `postgres` | |
+| `DATABASE_PASSWORD` | *(empty)* | Set locally in `.env` |
+| `ARTIFACT_STORAGE_PATH` | `./artifacts` | Git-ignored |
+| `LLM_PROVIDER` | `anthropic` | `anthropic | fake` |
+| `LLM_MODEL` | `claude-sonnet-4-6` | |
+| `LLM_ENABLED` | `true` | |
+| `LLM_MAX_TOKENS` | `4096` | |
+| `LLM_TEMPERATURE` | `0.2` | |
+| `LLM_TIMEOUT_MS` | `60000` | |
+| `ANTHROPIC_API_KEY` | *(empty placeholder)* | Never commit |
+| `ALLOW_PRIVATE_TARGETS` | `false` | Enable only for local demo/fixture use |
+| `AI_MAX_TESTS` | `20` | |
+| `AI_PROMPT_MAX_CHARS` | `30000` | |
+| `BUG_INTEL_MAX_RUNS` | `500` | |
+| `BUG_INTEL_MAX_CANDIDATE_PAIRS` | `2000` | |
+| `BUG_INTEL_MAX_AI_COMPARISONS` | `100` | |
+| `BUG_INTEL_MIN_RESOLUTION_STREAK` | `3` | |
+| `MIN_FLAKY_RUNS` | `10` | |
+| `REGRESSION_MAX_CONCURRENCY` | `1` | |
+| `MAX_AUTO_INVESTIGATIONS_PER_CAMPAIGN` | `20` | |
+| `MAX_AI_SUMMARIES_PER_CAMPAIGN` | `10` | |
+| `AUTH_ALLOW_REGISTRATION` | `true` | |
+| `AUTH_DEFAULT_ROLE` | `viewer` | `admin | qa_engineer | viewer` |
+| `SESSION_TTL_DAYS` | `7` | |
+| `CI_DEGRADED_EXIT_CODE` | `0` | Set to `1` to block PRs on degraded |
+| `RETENTION_ENABLED` | `false` | Opt-in |
+| `DEMO_PORT` | `4000` | For `tests/demo-app` |
+| `DEMO_MODE` | `normal` | `normal | buggy | flaky` |
+| `DEMO_ALLOW_RUNTIME_MODE_SWITCH` | `false` | |
 
-## Running locally
+## 8. PostgreSQL setup
+
+Requires a running local PostgreSQL 18.6 with an `ai_bug_hunter` database.
+Migrations run automatically at API startup and can be re-run with:
 
 ```powershell
-npm run dev
+npm run migrate --workspace @ai-bug-hunter/api
 ```
 
-- API: <http://localhost:5000/api/health>
-- Web dashboard: <http://localhost:5173>
+Schema and migration order are documented in [`docs/database.md`](docs/database.md).
 
-## Testing
+## 9. Anthropic setup
+
+The real Anthropic provider is optional. Without a key, the system falls back
+to `FakeLLMProvider` and all deterministic pipelines still function.
 
 ```powershell
-npm run test
+# .env
+ANTHROPIC_API_KEY=<your-anthropic-key>   # never commit
+LLM_PROVIDER=anthropic
+LLM_MODEL=claude-sonnet-4-6
 ```
 
-Runs backend + shared tests (Vitest, node env) followed by frontend component tests (Vitest, jsdom env).
+If the key is missing at runtime, AI endpoints return a controlled
+`provider_error` and the rest of the system continues. See
+[`docs/ai-architecture.md`](docs/ai-architecture.md).
 
-## Build
+## 10. Demo application
+
+`tests/demo-app` is an Express+HTML target with deterministic bugs, useful
+for end-to-end demos:
 
 ```powershell
-npm run build
+npm run demo                             # normal mode
+$env:DEMO_MODE = "buggy";   npm run demo # inject bugs
+$env:DEMO_MODE = "flaky";   npm run demo # deterministic flake
 ```
 
-Builds `packages/shared`, `apps/api`, and `apps/web`.
+See [`tests/demo-app/README.md`](tests/demo-app/README.md).
 
-## Roadmap
+## 11. Running tests
 
-- **Phase 1 (done):** Foundation — monorepo, backend, frontend shell, PostgreSQL connectivity, tests, CI.
-- **Phase 2 (done):** Browser execution engine — `@ai-bug-hunter/test-engine` (Chromium via Playwright), structured test definitions, discriminated action model, normalized execution results, `POST /api/test-runs`.
-- **Phase 3 (done):** Evidence collection engine — screenshot, DOM snapshot, console logs, page errors, network metadata, failure classification, browser metadata.
-- **Phase 4 (done):** Test run & evidence persistence — PostgreSQL schema (applications, test cases, test runs, steps, artifacts, evidence), migration runner, `LocalArtifactStore` with SHA-256 checksums, `TestRunPersistenceService`, list/detail/download API endpoints, frontend surfaces persisted runs.
-- **Phase 5 (done):** Application discovery engine — deterministic Chromium crawler, `ApplicationModel` with pages/links/forms/elements/ranked selectors/accessibility, `POST /api/discovery`, frontend Discovery panel.
-- **Phase 6 (done):** AI test generation — `LLMProvider` abstraction, `AnthropicProvider` (SDK isolated), `FakeLLMProvider` for tests, deterministic compaction of `ApplicationModel`, Zod + business-rule validation, prompt-injection defense, `POST /api/ai/generate-tests`, frontend preview + explicit "Run Selected Tests" flow.
-- **Phase 7 (done):** AI failure investigation — deterministic `FailureSignals` + `ObservedFacts`, bounded `InvestigationContext`, multimodal-capable provider interface, validator that strips fabricated evidence/step references, `POST /api/ai/investigate/:testRunId`, `investigations` table (migration `002`).
-- **Phase 8 (done):** Bug intelligence — cross-run `FailureFingerprint`s, deterministic normalization, weighted explainable similarity, blocking-based candidate pairs, union-find clustering, bounded AI comparator for ambiguous pairs, deterministic regression/resolution logic, `bug_clusters` + `bug_cluster_members` tables (migration `003`), frontend Bug Intelligence dashboard.
-- **Phase 9+:** Flaky-test intelligence, visual regression, cloud artifact storage, reporting, Jira integration.
+```powershell
+npm run test           # node + web
+npm run test:node      # vitest (api + packages + tests/**)
+npm run test:web       # vitest (jsdom, apps/web)
+```
 
-Deferred features are not implemented today, and the dashboard does not display fabricated data for them.
+## 12. CI integration
+
+Regression is exposed via a token-scoped surface:
+
+- `POST /api/ci/regression`
+- `GET  /api/ci/regression/:id/result`
+- CLI: `ai-bug-hunter-ci regression …`
+
+Full guide, exit-code table, GitHub Actions / GitLab / Jenkins snippets:
+[`docs/ci-integration.md`](docs/ci-integration.md).
+
+## 13. Security
+
+Authentication, authorization, SSRF policy, secret handling, prompt-injection
+defense, artifact security, CI tokens, rate limiting, logging, retention, and
+the STRIDE-style threat model are documented in
+[`docs/security.md`](docs/security.md).
+
+## 14. Screenshots
+
+See [`docs/architecture.md`](docs/architecture.md) for diagrams.
+
+## 15. Project limitations
+
+- Single-node deployment assumed. Rate limits and session store are
+  in-process.
+- No CSP header from the app itself; add via reverse proxy.
+- DNS rebinding not fully solved.
+- Regression campaigns hold no distributed lock — do not run multiple API
+  nodes against one database without adding one.
+- Artifact storage is local filesystem only in this release.
+
+## 16. Roadmap
+
+- **Phases 1–10 complete.** See "Phase history" below.
+- **Deferred:** cloud artifact storage (S3/GCS), Jira integration, Slack
+  notifications, Firefox/WebKit engines, HAR + video capture, distributed
+  execution.
+
+## 17. Resume-ready project description
+
+AI Bug Hunter is a full-stack TypeScript platform that autonomously
+discovers, tests, and reasons about web applications. Playwright drives
+deterministic crawling and execution; PostgreSQL persists runs, evidence,
+and bug clusters; a strict `LLMProvider` abstraction lets Claude propose
+tests, root-cause hypotheses, and semantic pair comparisons without ever
+controlling execution, storage, or pass/fail. Cross-run bug intelligence,
+reliability scoring, risk-based regression campaigns, cookie-based auth with
+role guards, SSRF protection, a token-scoped CI quality gate, a bundled CLI,
+and a demo application with switchable deterministic bugs make the system
+end-to-end usable from a fresh clone.
+
+---
+
+## Phase history
+
+- **Phase 10:** Auth (cookies + scrypt), role guards, CI quality gate + CLI,
+  executive dashboard, SSRF policy, request IDs, structured errors, AI
+  metrics, admin settings, opt-in retention, demo app, `docs/security.md`,
+  `docs/ci-integration.md`, `docs/ai-architecture.md`.
+- **Phase 9:** Flaky detection & regression campaigns — deterministic
+  reliability snapshots, explainable risk scoring, three selection
+  strategies, human-review boundary, deterministic quality gate.
+- **Phase 8:** Bug intelligence — hybrid deterministic fingerprints +
+  weighted similarity + union-find, bounded LLM comparator for ambiguous
+  pairs, explainable membership reasons, deterministic regression/resolution
+  logic, `bug_clusters` + `bug_cluster_members`.
+- **Phase 7:** AI failure investigation — deterministic `ObservedFacts`,
+  bounded `InvestigationContext`, multimodal-capable provider, validator
+  strips fabricated references, `investigations` table.
+- **Phase 6:** AI test generation — `LLMProvider` abstraction,
+  `AnthropicProvider` (SDK isolated), `FakeLLMProvider`, Zod + business-rule
+  validation, prompt-injection defense.
+- **Phase 5:** Application discovery engine — deterministic Chromium crawler,
+  `ApplicationModel`, `POST /api/discovery`.
+- **Phase 4:** Test run & evidence persistence — schema, migrator,
+  `LocalArtifactStore` with SHA-256 checksums, `TestRunPersistenceService`,
+  list/detail/download endpoints.
+- **Phase 3:** Evidence collection — screenshots, DOM snapshots, console,
+  page errors, network metadata, failure classification.
+- **Phase 2:** Browser execution engine — `@ai-bug-hunter/test-engine`,
+  structured test definitions, `POST /api/test-runs`.
+- **Phase 1:** Foundation — monorepo, backend, frontend shell, PostgreSQL
+  connectivity, tests, CI.

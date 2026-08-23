@@ -201,7 +201,7 @@ Set your key in `.env` (never commit it):
 ```
 LLM_PROVIDER=anthropic
 LLM_MODEL=claude-sonnet-4-6
-ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_API_KEY=<your-anthropic-key>
 ```
 
 Without a key the endpoint returns `status: "provider_error"` HTTP 200 with a safe message — no 500, no secrets exposed. **All tests pass without a real API key**; the test suite uses `FakeLLMProvider`.

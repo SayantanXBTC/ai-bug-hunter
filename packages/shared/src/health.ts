@@ -14,6 +14,13 @@ export interface DetailedHealthResponse extends HealthResponse {
   };
   uptimeSeconds: number;
   timestamp: string;
+  llmProvider?: {
+    status: 'configured' | 'fake_fallback' | 'disabled' | 'error';
+  };
+  artifactStorage?: {
+    ok: boolean;
+  };
+  browserAvailable?: 'yes' | 'no' | 'unknown';
 }
 
 export function isHealthResponse(value: unknown): value is HealthResponse {

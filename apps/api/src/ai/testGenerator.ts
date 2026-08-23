@@ -6,6 +6,7 @@ import {
   type TestAction,
   type TestDefinition,
 } from '@ai-bug-hunter/test-engine';
+import { assertTargetUrlAllowed, TargetUrlError } from '../security/targetUrlPolicy.js';
 import { logger } from '@ai-bug-hunter/test-engine';
 import { LLMProviderError, type LLMProvider } from './providers/llmProvider.js';
 import {
@@ -312,7 +313,22 @@ function validateUrl(
 ): void {
   try {
     assertSafeUrl(raw);
+    // If the discovered baseUrl itself is private (e.g. tests hitting loopback),
+    // allow private targets for generated URLs too — otherwise every test would
+    // fail validation against a local fixture. External baseUrls stay strict.
+    const baseIsPrivate = isPrivateHost(baseUrl.hostname);
+    assertTargetUrlAllowed(raw, { allowPrivate: baseIsPrivate });
   } catch (err) {
+    if (err instanceof TargetUrlError) {
+      const issue: TestValidationIssue = {
+        kind: 'invalid_url',
+        message: `${err.code}: ${err.message}`,
+        url: raw,
+        ...(stepIndex !== undefined ? { stepIndex } : {}),
+      };
+      issues.push(issue);
+      return;
+    }
     const issue: TestValidationIssue = {
       kind: 'invalid_url',
       message: err instanceof Error ? err.message : 'invalid URL',
@@ -349,6 +365,24 @@ function validateUrl(
     // Soft note as a warning-style issue with invalid_url kind is too strong;
     // we accept same-origin URLs that weren't crawled (e.g. a link discovered on a page).
   }
+}
+
+function isPrivateHost(host: string): boolean {
+  if (host === 'localhost' || host === '0.0.0.0') return true;
+  // IPv4 dotted-quad in private-ish ranges.
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (m) {
+    const a = Number(m[1]);
+    const b = Number(m[2]);
+    if (a === 127 || a === 10 || a === 0) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 169 && b === 254) return true;
+  }
+  if (host === '::1' || host.startsWith('fe80:') || host.startsWith('fc') || host.startsWith('fd')) {
+    return true;
+  }
+  return false;
 }
 
 function signatureFor(t: GeneratedTest): string {

@@ -4,6 +4,7 @@ import { HttpError } from '../middleware/errorHandler.js';
 import { pool } from '../db/pool.js';
 import { insertApplication, listApplications } from '../db/repositories/applicationRepo.js';
 import { env } from '../config/env.js';
+import { requireRole, requireUser } from '../middleware/authenticate.js';
 
 export const applicationsRouter = Router();
 
@@ -22,6 +23,7 @@ const ListQuery = z.object({
 
 applicationsRouter.post(
   '/applications',
+  requireRole('qa_engineer'),
   async (req: Request, res: Response, next: NextFunction) => {
     const parsed = CreateSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -39,6 +41,7 @@ applicationsRouter.post(
 
 applicationsRouter.get(
   '/applications',
+  requireUser,
   async (req: Request, res: Response, next: NextFunction) => {
     const parsed = ListQuery.safeParse(req.query);
     if (!parsed.success) return next(new HttpError(400, 'Invalid pagination'));

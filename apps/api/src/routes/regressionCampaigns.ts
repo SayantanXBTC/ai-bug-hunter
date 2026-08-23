@@ -31,7 +31,12 @@ import {
   type ArtifactRecord,
 } from '../db/repositories/evidenceRepo.js';
 import { sanitizeDom } from '../ai/investigation/investigationContext.js';
+import { requireRole, requireUser } from '../middleware/authenticate.js';
 
+// TODO(security/ssrf): validate each stored TestDefinition.targetUrl via
+// assertTargetUrlAllowed() before executing in RegressionCampaignService. Deferred
+// to the campaign-execution refactor — for now URLs are already gated at the
+// test-cases create/update boundary (see routes/testCases.ts).
 export const regressionCampaignsRouter = Router();
 
 const CreateSchema = z.object({
@@ -134,6 +139,7 @@ function buildService(): RegressionCampaignService {
 
 regressionCampaignsRouter.post(
   '/regression-campaigns',
+  requireRole('qa_engineer'),
   async (req: Request, res: Response, next: NextFunction) => {
     const parsed = CreateSchema.safeParse(req.body);
     if (!parsed.success) return next(new HttpError(400, 'Invalid campaign request'));
@@ -156,6 +162,7 @@ regressionCampaignsRouter.post(
 
 regressionCampaignsRouter.post(
   '/regression-campaigns/:id/run',
+  requireRole('qa_engineer'),
   async (req: Request, res: Response, next: NextFunction) => {
     const id = UuidParam.safeParse(req.params.id);
     if (!id.success) return next(new HttpError(400, 'Invalid id'));
@@ -171,6 +178,7 @@ regressionCampaignsRouter.post(
 
 regressionCampaignsRouter.post(
   '/regression-campaigns/:id/cancel',
+  requireRole('qa_engineer'),
   async (req: Request, res: Response, next: NextFunction) => {
     const id = UuidParam.safeParse(req.params.id);
     if (!id.success) return next(new HttpError(400, 'Invalid id'));
@@ -187,6 +195,7 @@ regressionCampaignsRouter.post(
 
 regressionCampaignsRouter.get(
   '/regression-campaigns',
+  requireUser,
   async (req: Request, res: Response, next: NextFunction) => {
     const parsed = ListSchema.safeParse(req.query);
     if (!parsed.success) return next(new HttpError(400, 'Invalid query'));
@@ -207,6 +216,7 @@ regressionCampaignsRouter.get(
 
 regressionCampaignsRouter.get(
   '/regression-campaigns/:id',
+  requireUser,
   async (req: Request, res: Response, next: NextFunction) => {
     const id = UuidParam.safeParse(req.params.id);
     if (!id.success) return next(new HttpError(400, 'Invalid id'));

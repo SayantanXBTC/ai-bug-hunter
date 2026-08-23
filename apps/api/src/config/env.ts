@@ -32,7 +32,18 @@ const EnvSchema = z.object({
   TEST_RUNS_LIST_MAX_LIMIT: z.coerce.number().int().positive().max(200).default(100),
   LLM_PROVIDER: z.enum(['anthropic', 'fake']).default('anthropic'),
   LLM_MODEL: z.string().min(1).default('claude-sonnet-4-6'),
+  LLM_ENABLED: z
+    .union([z.boolean(), z.string()])
+    .default(true)
+    .transform((v) => (typeof v === 'boolean' ? v : v.toLowerCase() !== 'false' && v !== '0')),
+  LLM_MAX_TOKENS: z.coerce.number().int().positive().max(200_000).default(4096),
+  LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.2),
+  LLM_TIMEOUT_MS: z.coerce.number().int().positive().max(600_000).default(60_000),
   ANTHROPIC_API_KEY: z.string().default(''),
+  ALLOW_PRIVATE_TARGETS: z
+    .union([z.boolean(), z.string()])
+    .default(false)
+    .transform((v) => (typeof v === 'boolean' ? v : v.toLowerCase() === 'true' || v === '1')),
   AI_MAX_TESTS: z.coerce.number().int().positive().max(50).default(20),
   AI_PROMPT_MAX_CHARS: z.coerce.number().int().positive().max(200_000).default(30_000),
   BUG_INTEL_MAX_RUNS: z.coerce.number().int().positive().max(5_000).default(500),
@@ -43,6 +54,18 @@ const EnvSchema = z.object({
   REGRESSION_MAX_CONCURRENCY: z.coerce.number().int().positive().max(20).default(1),
   MAX_AUTO_INVESTIGATIONS_PER_CAMPAIGN: z.coerce.number().int().nonnegative().max(200).default(20),
   MAX_AI_SUMMARIES_PER_CAMPAIGN: z.coerce.number().int().nonnegative().max(50).default(10),
+  AUTH_ALLOW_REGISTRATION: z
+    .union([z.boolean(), z.string()])
+    .default(true)
+    .transform((v) => (typeof v === 'boolean' ? v : v.toLowerCase() !== 'false' && v !== '0')),
+  AUTH_DEFAULT_ROLE: z.enum(['admin', 'qa_engineer', 'viewer']).default('viewer'),
+  SESSION_TTL_DAYS: z.coerce.number().int().positive().max(365).default(7),
+  CI_DEGRADED_EXIT_CODE: z.coerce.number().int().min(0).max(255).default(0),
+  RETENTION_ENABLED: z
+    .union([z.boolean(), z.string()])
+    .default(false)
+    .transform((v) => (typeof v === 'boolean' ? v : v.toLowerCase() === 'true' || v === '1')),
+  TEST_AUTH_BYPASS: z.string().default(''),
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;

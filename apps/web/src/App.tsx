@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { Sidebar } from './components/Sidebar.js';
-import { StatusBadge } from './components/StatusBadge.js';
-import { EmptyState } from './components/EmptyState.js';
+import { Sidebar, type ViewId } from './components/Sidebar.js';
 import { TestRunList } from './components/TestRunList.js';
 import { TestRunDetail } from './components/TestRunDetail.js';
 import { Discovery } from './components/Discovery.js';
@@ -9,119 +7,107 @@ import { AiGeneration } from './components/AiGeneration.js';
 import { BugIntelligence } from './components/BugIntelligence.js';
 import { TestReliability } from './components/TestReliability.js';
 import { RegressionCampaigns } from './components/RegressionCampaigns.js';
-import { useHealth } from './hooks/useHealth.js';
-
-const sections = [
-  {
-    id: 'applications',
-    title: 'Applications',
-    description: 'Web applications registered for autonomous testing.',
-    emptyText: 'No applications registered.',
-  },
-  {
-    id: 'test-runs',
-    title: 'Test Runs',
-    description: 'Recent autonomous test execution runs.',
-    emptyText: 'No test runs yet.',
-  },
-  {
-    id: 'test-cases',
-    title: 'Test Cases',
-    description: 'AI-generated and curated test cases.',
-    emptyText: 'No test cases yet.',
-  },
-  {
-    id: 'bugs',
-    title: 'Bugs',
-    description: 'Bugs discovered and clustered by the intelligence engine.',
-    emptyText: 'No bugs discovered.',
-  },
-  {
-    id: 'reports',
-    title: 'Reports',
-    description: 'Historical test and quality reports.',
-    emptyText: 'No reports available.',
-  },
-] as const;
+import { Dashboard } from './components/Dashboard.js';
+import { SettingsView } from './components/SettingsView.js';
+import { LoginView } from './components/LoginView.js';
+import { useAuth } from './hooks/useAuth.js';
 
 export function App(): JSX.Element {
-  const health = useHealth();
+  const auth = useAuth();
+  const [view, setView] = useState<ViewId>('dashboard');
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [discoveryResult, setDiscoveryResult] = useState<{
     application: { id: string; baseUrl: string; discoveredAt: string; pages: Array<{ path: string }> };
   } | null>(null);
 
+  if (auth.loading) {
+    return <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">Loading…</div>;
+  }
+  if (!auth.user) {
+    return <LoginView onAuthenticated={() => void auth.refresh()} />;
+  }
+
+  const role = auth.user.role;
+  const canWrite = role === 'admin' || role === 'qa_engineer';
+
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100">
-      <Sidebar sections={sections.map((s) => ({ id: s.id, label: s.title }))} />
-      <main className="flex-1 p-8 space-y-8 overflow-y-auto">
-        <header className="flex items-start justify-between gap-4 border-b border-slate-800 pb-6">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">AI Bug Hunter</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-400">
-              AI-powered autonomous web application testing and bug intelligence platform.
-              Phase 1 — Foundation. Testing engine, crawler, and bug intelligence layer arrive in
-              later phases.
-            </p>
+    <div className="flex min-h-screen bg-slate-50 text-slate-800">
+      <Sidebar active={view} onNavigate={setView} role={role} />
+      <div className="flex flex-1 flex-col">
+        <header className="flex items-center justify-between border-b bg-white px-6 py-3">
+          <div className="text-sm font-medium text-slate-700">AI Bug Hunter</div>
+          <div className="flex items-center gap-4 text-sm">
+            <span className="text-slate-600">
+              {auth.user.email} <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-500">{role}</span>
+            </span>
+            <button
+              onClick={() => void auth.logout()}
+              className="rounded border px-3 py-1 text-slate-700 hover:bg-slate-100"
+            >
+              Logout
+            </button>
           </div>
-          <StatusBadge health={health} />
         </header>
-
-        <section id="discovery">
-          <Discovery onResult={(r) => setDiscoveryResult(r as never)} />
-        </section>
-
-        <section id="ai-generation">
-          <AiGeneration
-            applicationModel={discoveryResult?.application ?? null}
-            applicationPagePaths={discoveryResult?.application.pages.map((p) => p.path) ?? []}
-          />
-        </section>
-
-        <section id="regression">
-          <RegressionCampaigns />
-        </section>
-
-        <section id="reliability">
-          <TestReliability />
-        </section>
-
-        <section id="bugs">
-          <BugIntelligence />
-        </section>
-
-        <section id="test-runs" className="rounded-lg border border-slate-800 bg-slate-900/50 p-5">
-          <h2 className="text-lg font-semibold">Test Runs</h2>
-          <p className="mt-1 mb-4 text-sm text-slate-400">
-            Recent autonomous test execution runs, persisted in PostgreSQL.
-          </p>
-          <TestRunList onSelect={setSelectedRunId} />
-        </section>
-
-        {selectedRunId && (
-          <section id="test-run-detail">
-            <TestRunDetail id={selectedRunId} onClose={() => setSelectedRunId(null)} />
-          </section>
-        )}
-
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {sections
-            .filter((s) => s.id !== 'test-runs')
-            .map((s) => (
-              <article
-                key={s.id}
-                id={s.id}
-                className="rounded-lg border border-slate-800 bg-slate-900/50 p-5"
-              >
-                <h2 className="text-lg font-semibold">{s.title}</h2>
-                <p className="mt-1 text-sm text-slate-400">{s.description}</p>
-                <div className="mt-4">
-                  <EmptyState text={s.emptyText} />
+        <main className="flex-1 overflow-y-auto p-6">
+          {view === 'dashboard' && <Dashboard />}
+          {view === 'applications' && (
+            <div className="space-y-4">
+              <h1 className="text-2xl font-semibold">Applications</h1>
+              {canWrite ? (
+                <Discovery onResult={(r) => setDiscoveryResult(r as never)} />
+              ) : (
+                <div className="rounded-lg border bg-white p-4 text-sm text-slate-500 shadow-sm">
+                  You have read-only access. Ask an admin or QA engineer to register applications.
                 </div>
-              </article>
-            ))}
-        </section>
-      </main>
+              )}
+            </div>
+          )}
+          {view === 'tests' && (
+            <div className="space-y-4">
+              <h1 className="text-2xl font-semibold">Tests</h1>
+              <AiGeneration
+                applicationModel={discoveryResult?.application ?? null}
+                applicationPagePaths={discoveryResult?.application.pages.map((p) => p.path) ?? []}
+              />
+            </div>
+          )}
+          {view === 'test-runs' && (
+            <div className="space-y-4">
+              <h1 className="text-2xl font-semibold">Test Runs</h1>
+              <div className="rounded-lg border bg-white p-4 shadow-sm">
+                <TestRunList onSelect={setSelectedRunId} />
+              </div>
+              {selectedRunId && (
+                <TestRunDetail id={selectedRunId} onClose={() => setSelectedRunId(null)} />
+              )}
+            </div>
+          )}
+          {view === 'bugs' && (
+            <div className="space-y-4">
+              <h1 className="text-2xl font-semibold">Bugs</h1>
+              <BugIntelligence />
+            </div>
+          )}
+          {view === 'reliability' && (
+            <div className="space-y-4">
+              <h1 className="text-2xl font-semibold">Reliability</h1>
+              <TestReliability />
+            </div>
+          )}
+          {view === 'regression' && (
+            <div className="space-y-4">
+              <h1 className="text-2xl font-semibold">Regression</h1>
+              <RegressionCampaigns />
+            </div>
+          )}
+          {view === 'settings' && (
+            <div className="space-y-4">
+              <h1 className="text-2xl font-semibold">Settings</h1>
+              <SettingsView user={auth.user} />
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

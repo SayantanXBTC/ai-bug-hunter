@@ -9,6 +9,7 @@ export interface LLMRequest {
   model: string;
   maxOutputTokens?: number;
   images?: ImageEvidenceInput[];
+  operation?: string;
 }
 
 export interface LLMResponse {
