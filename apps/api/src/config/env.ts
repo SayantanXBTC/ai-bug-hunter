@@ -58,7 +58,7 @@ const EnvSchema = z.object({
     .union([z.boolean(), z.string()])
     .default(true)
     .transform((v) => (typeof v === 'boolean' ? v : v.toLowerCase() !== 'false' && v !== '0')),
-  AUTH_DEFAULT_ROLE: z.enum(['admin', 'qa_engineer', 'viewer']).default('viewer'),
+  AUTH_DEFAULT_ROLE: z.enum(['admin', 'qa_engineer', 'viewer']).default('qa_engineer'),
   SESSION_TTL_DAYS: z.coerce.number().int().positive().max(365).default(7),
   CI_DEGRADED_EXIT_CODE: z.coerce.number().int().min(0).max(255).default(0),
   RETENTION_ENABLED: z

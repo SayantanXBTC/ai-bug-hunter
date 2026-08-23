@@ -26,7 +26,11 @@ Three roles enforced by route middleware:
 | `qa_engineer` | yes | yes | no | no |
 | `viewer` | yes | no | no | no |
 
-Default role for new registrations: `AUTH_DEFAULT_ROLE` (default `viewer`).
+Default role for new registrations: `AUTH_DEFAULT_ROLE` (default `qa_engineer`).
+New users can create applications, tests, runs, campaigns, and investigate
+failures for their own data. `viewer` is opt-in via env override or admin
+demotion. Admin operations (CI tokens, retention, admin settings) still
+require an explicit `admin` role.
 
 ## SSRF protection
 
