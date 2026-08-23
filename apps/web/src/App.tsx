@@ -35,7 +35,14 @@ export function App(): JSX.Element {
     <div className="flex min-h-screen bg-[var(--bg)] text-[var(--text)]">
       <Sidebar active={view} onNavigate={setView} role={role} />
       <div className="flex flex-1 flex-col">
-        <TopBar user={auth.user} onLogout={() => void auth.logout()} />
+        <TopBar
+          user={auth.user}
+          onLogout={() => void auth.logout()}
+          onNavigate={(v, id) => {
+            if (v === 'test-runs' && id) setSelectedRunId(id);
+            setView(v as typeof view);
+          }}
+        />
         <main className="flex-1 overflow-y-auto p-6">
           {view === 'dashboard' && <Dashboard onNavigate={(t) => setView(t)} />}
           {view === 'applications' && (

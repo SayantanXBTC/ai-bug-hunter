@@ -1,9 +1,12 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AuthUser } from '@ai-bug-hunter/shared';
 import { ThemeToggle } from './ThemeToggle.js';
+import { NotificationsPanel } from './NotificationsPanel.js';
 
 interface TopBarProps {
   user: AuthUser;
   onLogout: () => void;
+  onNavigate?: (view: string, id?: string) => void;
 }
 
 function initialsFrom(email: string): string {
@@ -37,8 +40,39 @@ function BellIcon(): JSX.Element {
   );
 }
 
-export function TopBar({ user, onLogout }: TopBarProps): JSX.Element {
+export function TopBar({ user, onLogout, onNavigate }: TopBarProps): JSX.Element {
   const initials = initialsFrom(user.email);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [unread, setUnread] = useState<number>(0);
+  const bellRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click or Esc
+  useEffect(() => {
+    if (!notifOpen) return;
+    function onDown(e: MouseEvent): void {
+      if (
+        !panelRef.current?.contains(e.target as Node) &&
+        !bellRef.current?.contains(e.target as Node)
+      ) {
+        setNotifOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent): void {
+      if (e.key === 'Escape') setNotifOpen(false);
+    }
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [notifOpen]);
+
+  const handleNotificationsLoaded = useCallback((count: number) => {
+    setUnread(count);
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-6 backdrop-blur">
       <div className="text-sm font-medium tracking-wide text-[var(--text)]">
@@ -46,13 +80,43 @@ export function TopBar({ user, onLogout }: TopBarProps): JSX.Element {
       </div>
       <div className="flex items-center gap-2.5 text-sm">
         <ThemeToggle />
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="relative inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--text-muted)] transition-colors hover:text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-        >
-          <BellIcon />
-        </button>
+        <div className="relative">
+          <button
+            ref={bellRef}
+            type="button"
+            aria-label={notifOpen ? 'Close notifications' : 'Open notifications'}
+            aria-expanded={notifOpen}
+            aria-haspopup="dialog"
+            onClick={() => setNotifOpen((v) => !v)}
+            className="relative inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--text-muted)] transition-colors hover:text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+          >
+            <BellIcon />
+            {unread > 0 && (
+              <span
+                aria-hidden
+                className="absolute -right-1 -top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--primary)] px-1 text-[9px] font-semibold text-white"
+              >
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </button>
+          {notifOpen && (
+            <div
+              ref={panelRef}
+              role="dialog"
+              aria-label="Notifications"
+              className="absolute right-0 top-10 z-50 w-[380px]"
+            >
+              <NotificationsPanel
+                onNavigate={(view, id) => {
+                  setNotifOpen(false);
+                  onNavigate?.(view, id);
+                }}
+                onLoaded={handleNotificationsLoaded}
+              />
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-2 pl-1">
           <span
             aria-hidden

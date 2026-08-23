@@ -3,7 +3,6 @@ import { HexGridFloor } from './HexGridFloor.js';
 import { OrbitalPaths } from './OrbitalPaths.js';
 import { OrbLabelSwarm } from './OrbLabelSwarm.js';
 import { TopBrand } from './TopBrand.js';
-import { StatusHUD } from './StatusHUD.js';
 
 interface LoginSceneProps {
   children: ReactNode;
@@ -75,9 +74,6 @@ export function LoginScene({ children }: LoginSceneProps): JSX.Element {
 
       {/* 10. Top brand */}
       <TopBrand />
-
-      {/* 11. Status HUD */}
-      <StatusHUD />
 
       {/* 8. Login card (centered) */}
       <div className="relative z-10 flex min-h-[100dvh] w-full items-center justify-center px-4 py-24 md:py-16">
