@@ -15,16 +15,6 @@ export function HexGridFloor(): JSX.Element {
           'linear-gradient(to bottom, transparent 0%, black 40%, black 85%, transparent 100%)',
       }}
     >
-      <style>{`
-        @keyframes hexPulse {
-          0%, 100% { opacity: 0.25; }
-          50% { opacity: 0.75; }
-        }
-        .hex-dot { animation: hexPulse 8s ease-in-out infinite; }
-        @media (prefers-reduced-motion: reduce) {
-          .hex-dot { animation: none !important; }
-        }
-      `}</style>
       <div
         className="absolute inset-0"
         style={{
@@ -49,16 +39,8 @@ export function HexGridFloor(): JSX.Element {
                 strokeWidth={0.6}
               />
             </pattern>
-            <pattern id="hex-dots" width={260} height={225} patternUnits="userSpaceOnUse">
-              <circle cx="26" cy="22" r="1.2" fill="#a78bfa" className="hex-dot" />
-              <circle cx="156" cy="112" r="1.2" fill="#60a5fa" className="hex-dot" style={{ animationDelay: '2s' }} />
-              <circle cx="234" cy="45" r="1.2" fill="#a78bfa" className="hex-dot" style={{ animationDelay: '4s' }} />
-              <circle cx="78" cy="180" r="1.2" fill="#22d3ee" className="hex-dot" style={{ animationDelay: '1s' }} />
-              <circle cx="208" cy="200" r="1.2" fill="#a78bfa" className="hex-dot" style={{ animationDelay: '5s' }} />
-            </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#hex-floor)" />
-          <rect width="100%" height="100%" fill="url(#hex-dots)" />
         </svg>
       </div>
     </div>

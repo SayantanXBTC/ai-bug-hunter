@@ -76,16 +76,6 @@ export function OrbitalPaths(): JSX.Element {
                   strokeDasharray="0.6 1.4"
                   vectorEffect="non-scaling-stroke"
                 />
-                {o.dotDur && o.dotColor && (
-                  <circle r={0.5} fill={o.dotColor} className="orbit-dot">
-                    <animateMotion
-                      dur={`${o.dotDur}s`}
-                      repeatCount="indefinite"
-                      rotate="auto"
-                      path={`M ${o.cx - o.rx} ${o.cy} a ${o.rx} ${o.ry} ${o.rotate} 1 0 ${o.rx * 2} 0 a ${o.rx} ${o.ry} ${o.rotate} 1 0 ${-o.rx * 2} 0`}
-                    />
-                  </circle>
-                )}
               </g>
             </g>
           );
