@@ -48,6 +48,8 @@ export interface CreateCampaignInput {
   strategy: SelectionStrategy;
   trigger?: CampaignTrigger;
   maxTests?: number;
+  /** Owner id to stamp on the new campaign row (nullable). */
+  ownerId?: string | null;
 }
 
 export interface CampaignPreview {
@@ -90,6 +92,7 @@ export class RegressionCampaignService {
       strategy: input.strategy,
       requestedTestCount: input.maxTests ?? testCases.length,
       selectedTestCount: selected.length,
+      ownerId: input.ownerId ?? null,
     });
 
     for (let i = 0; i < selected.length; i += 1) {

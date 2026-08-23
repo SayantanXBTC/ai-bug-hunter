@@ -184,6 +184,9 @@ export function computeQualityScoreFromInputs(
 export interface LoadInputsOptions {
   applicationId?: string;
   maxRuns?: number;
+  /** Tenant scope: when isAdmin=false, only rows owned by userId contribute. */
+  userId?: string;
+  isAdmin?: boolean;
 }
 
 /**
@@ -195,19 +198,26 @@ export async function loadInputsForApp(
   opts: LoadInputsOptions = {},
 ): Promise<QualityScoreInputs> {
   const maxRuns = opts.maxRuns ?? getMaxRuns();
-  // Runs: last N regardless of application (application-level test_run linkage lives via
-  // test_case → application, which is not always populated). We keep it simple and use
-  // recent runs across the whole system when applicationId is not provided.
-  const runsSql = opts.applicationId
-    ? `SELECT tr.status, tr.error_name, tr.error_message
-       FROM test_runs tr
-       LEFT JOIN test_cases tc ON tc.id = tr.test_case_id
-       WHERE tc.application_id = $1 OR tr.test_case_id IS NULL
-       ORDER BY tr.created_at DESC LIMIT $2`
-    : `SELECT status, error_name, error_message
-       FROM test_runs
-       ORDER BY created_at DESC LIMIT $1`;
-  const runsParams = opts.applicationId ? [opts.applicationId, maxRuns] : [maxRuns];
+  const scoped = opts.userId && opts.isAdmin === false;
+
+  // Runs: last N — filtered by owner when tenant scope is active.
+  const runsFilters: string[] = [];
+  const runsParams: unknown[] = [];
+  if (opts.applicationId) {
+    runsParams.push(opts.applicationId);
+    runsFilters.push(`(tc.application_id = $${runsParams.length} OR tr.test_case_id IS NULL)`);
+  }
+  if (scoped) {
+    runsParams.push(opts.userId!);
+    runsFilters.push(`tr.owner_id = $${runsParams.length}`);
+  }
+  const runsWhere = runsFilters.length > 0 ? `WHERE ${runsFilters.join(' AND ')}` : '';
+  runsParams.push(maxRuns);
+  const runsSql = `SELECT tr.status, tr.error_name, tr.error_message
+                   FROM test_runs tr
+                   LEFT JOIN test_cases tc ON tc.id = tr.test_case_id
+                   ${runsWhere}
+                   ORDER BY tr.created_at DESC LIMIT $${runsParams.length}`;
   const runsRes = await pool.query<{ status: 'passed' | 'failed' | 'error'; error_name: string | null; error_message: string | null }>(
     runsSql,
     runsParams,
@@ -218,8 +228,15 @@ export async function loadInputsForApp(
     errorMessage: r.error_message,
   }));
 
+  const clustersParams: unknown[] = [];
+  let clustersWhere = '';
+  if (scoped) {
+    clustersParams.push(opts.userId!);
+    clustersWhere = `WHERE owner_id = $${clustersParams.length}`;
+  }
   const clustersRes = await pool.query<{ status: string; regression_status: string; severity: string }>(
-    `SELECT status, regression_status, severity FROM bug_clusters LIMIT 1000`,
+    `SELECT status, regression_status, severity FROM bug_clusters ${clustersWhere} LIMIT 1000`,
+    clustersParams,
   );
   const clusters: QualityScoreCluster[] = clustersRes.rows.map((c) => ({
     status: c.status,
@@ -227,15 +244,39 @@ export async function loadInputsForApp(
     severity: c.severity,
   }));
 
-  const reliabilityRes = await pool.query<{ status: string }>(
-    `SELECT status FROM test_reliability_snapshots LIMIT 1000`,
-  );
-  const reliability: QualityScoreReliability[] = reliabilityRes.rows.map((r) => ({ status: r.status }));
+  // Reliability rows have no owner_id — for non-admins, intersect via test_runs.
+  let reliability: QualityScoreReliability[];
+  if (scoped) {
+    const reliabilityRes = await pool.query<{ status: string }>(
+      `SELECT s.status FROM test_reliability_snapshots s
+       WHERE EXISTS (
+         SELECT 1 FROM test_runs r
+         WHERE r.external_test_id = s.external_test_id
+           AND r.owner_id = $1
+       )
+       LIMIT 1000`,
+      [opts.userId!],
+    );
+    reliability = reliabilityRes.rows.map((r) => ({ status: r.status }));
+  } else {
+    const reliabilityRes = await pool.query<{ status: string }>(
+      `SELECT status FROM test_reliability_snapshots LIMIT 1000`,
+    );
+    reliability = reliabilityRes.rows.map((r) => ({ status: r.status }));
+  }
 
-  const campaignSql = opts.applicationId
-    ? `SELECT quality FROM regression_campaigns WHERE application_id = $1 ORDER BY created_at DESC LIMIT 1`
-    : `SELECT quality FROM regression_campaigns ORDER BY created_at DESC LIMIT 1`;
-  const campaignParams = opts.applicationId ? [opts.applicationId] : [];
+  const campaignFilters: string[] = [];
+  const campaignParams: unknown[] = [];
+  if (opts.applicationId) {
+    campaignParams.push(opts.applicationId);
+    campaignFilters.push(`application_id = $${campaignParams.length}`);
+  }
+  if (scoped) {
+    campaignParams.push(opts.userId!);
+    campaignFilters.push(`owner_id = $${campaignParams.length}`);
+  }
+  const campaignWhere = campaignFilters.length > 0 ? `WHERE ${campaignFilters.join(' AND ')}` : '';
+  const campaignSql = `SELECT quality FROM regression_campaigns ${campaignWhere} ORDER BY created_at DESC LIMIT 1`;
   const campaignRes = await pool.query<{ quality: string | null }>(campaignSql, campaignParams);
   const recentCampaign = campaignRes.rows[0] ? { quality: campaignRes.rows[0].quality } : null;
 

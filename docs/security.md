@@ -89,16 +89,25 @@ follow-up.
 
 ## Rate limiting
 
-In-memory token buckets keyed per endpoint. Limits (per client / token) are:
+In-memory token buckets keyed per endpoint. Limits are:
 
-| Endpoint | Window | Max |
-| --- | --- | --- |
-| `POST /api/auth/login` | 15 min | 10 |
-| `POST /api/auth/register` | 15 min | 5 |
-| `POST /api/discovery` | 15 min | 30 |
-| `POST /api/test-runs` | 15 min | 60 |
-| `POST /api/ai/generate-tests` | 15 min | 30 |
-| `POST /api/ci/regression` | 60 min | 30 |
+| Endpoint | Window | Max | Keyed by |
+| --- | --- | --- | --- |
+| `POST /api/auth/login` | 1 min | 10 | IP |
+| `POST /api/auth/register` | 60 min | 5 | IP |
+| `POST /api/discovery` | 60 min | 10 | user |
+| `POST /api/ai/generate-tests` | 60 min | 20 | user |
+| `POST /api/ai/investigate/:id` | 60 min | 30 | user |
+| `POST /api/ai/bug-intelligence/analyze` | 60 min | 10 | user |
+| `POST /api/regression-campaigns` | 60 min | 20 | user |
+| `POST /api/regression-campaigns/:id/run` | 60 min | 10 | user |
+| `POST /api/ci/regression` | 60 min | 30 | CI token |
+| `POST /api/ci-tokens` | 60 min | 10 | admin user |
+
+On breach the API returns `429` with body
+`{"error":{"code":"rate_limited","message":"Too many requests. Please try again later.","requestId":"..."}}`
+and a `Retry-After` header (seconds). The message is uniform across users to
+avoid enumeration signals.
 
 Login failures also update `login_attempts` — repeated failures trigger a
 lockout window.
@@ -150,31 +159,37 @@ index). Semantics:
   is true, no filter is applied. When `isAdmin` is false, `WHERE owner_id =
   $ownerId` is added on list, and single-row reads return `null` (→ HTTP 404 at
   the route) when the row's `owner_id` does not match.
-- Route mapping (implemented):
+- Route mapping (all five entities + dashboard aggregates now scoped):
   - `applications` — list / get / create / **delete** are scoped. Delete blocks
     if child test cases or test runs exist (409).
   - `test-cases` — list / get / create / patch are scoped (patch pre-checks
     ownership).
   - `test-runs` — list / get / create are scoped. Persistence service propagates
     the caller's `ownerId`.
-  - `evidence` — `GET /api/evidence/:id` now joins to `test_runs.owner_id` and
+  - `evidence` — `GET /api/evidence/:id` joins to `test_runs.owner_id` and
     returns 404 (not 403) when the caller is not the owner and is not an admin.
     Existence is never leaked.
-
-### Deferred / follow-ups
-- `bug_clusters` and `regression_campaigns` currently accept the column and
-  index but their repositories/routes are **not yet scoped**. Both are
-  effectively still visible to any authenticated user; today's data plane treats
-  clustering as a shared workspace. Non-admins are still blocked from mutation
-  by role guards, but they can list/read shared clusters and campaigns.
-- Dashboard aggregate queries (`/api/dashboard/overview`,
-  `/api/dashboard/trends`) do not yet add `AND (owner_id = $userId OR $isAdmin)`
-  predicates. For a first non-admin login, the dashboard therefore continues to
-  reflect global (admin-view) counts. Tracked as a follow-up: extend
-  `dashboard.ts` after clusters/campaigns are scoped.
+  - `bug_clusters` — `GET /api/ai/bug-intelligence/clusters` (list + detail) and
+    `POST /api/ai/bug-intelligence/analyze` are scoped. Analyze now requires
+    `qa_engineer`, is rate-limited (10/hr per user), reads only failed runs
+    owned by the caller, and stamps `owner_id = req.user.id` on clusters it
+    creates.
+  - `regression_campaigns` — list / get / create / run / cancel are scoped.
+    Non-owners get 404 on cross-tenant campaign IDs. Create stamps
+    `owner_id = req.user.id`.
+  - `dashboard` — `GET /api/dashboard/overview` and `GET /api/dashboard/trends`
+    both add `AND owner_id = $userId` for non-admins on `test_runs`,
+    `bug_clusters`, `regression_campaigns`, and `applications`. Reliability
+    (which has no `owner_id`) is intersected via `EXISTS (SELECT … FROM
+    test_runs WHERE owner_id = $userId)`. Quality score inputs are scoped the
+    same way.
 - No backfill: existing rows keep `owner_id = NULL` and are admin-only visible.
   Operator can run `UPDATE ... SET owner_id = '<admin-id>' WHERE owner_id IS
   NULL` if they want to attribute historical data.
+- Integration test: `apps/api/src/routes/tenantIsolation.test.ts` seeds two
+  users against an isolated schema and asserts userB cannot see or delete
+  userA's applications, test cases, test runs, evidence, clusters, or
+  campaigns. Skipped unless `RUN_DB_TESTS=1` and `DATABASE_PASSWORD` are set.
 
 ## Known limitations
 
@@ -197,6 +212,7 @@ index). Semantics:
   (23 regression tests) but does not re-resolve at connect time. Deferred.
 - **CSP header** is not emitted server-side (would break the Vite dev server).
   Add via reverse proxy in production.
-- **Tenant isolation for bug clusters, regression campaigns, and dashboard
-  aggregates** is partially deferred — see the "Deferred / follow-ups" list
-  under Tenant isolation.
+- **Test-only auth bypass** (`TEST_AUTH_BYPASS=1`) is guarded behind
+  `NODE_ENV=test`. It accepts optional `x-test-user-id`, `x-test-user-role`,
+  and `x-test-user-email` headers so integration tests can assert per-user
+  tenant isolation. It never activates outside test.

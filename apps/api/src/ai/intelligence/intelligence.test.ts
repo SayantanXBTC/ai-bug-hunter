@@ -237,6 +237,7 @@ describe('clusterFingerprints (deterministic path)', () => {
       error_name: null,
       error_message: null,
       error_step_index: null,
+      owner_id: null,
       created_at: new Date(iso),
     }));
     const map = new Map<string, TestRunRecord[]>([['t1', history]]);
@@ -260,6 +261,7 @@ describe('clusterFingerprints (deterministic path)', () => {
       error_name: null,
       error_message: null,
       error_step_index: null,
+      owner_id: null,
       created_at: new Date(iso),
     }));
     const map = new Map<string, TestRunRecord[]>([['t2', later]]);

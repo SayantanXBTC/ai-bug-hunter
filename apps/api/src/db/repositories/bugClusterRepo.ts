@@ -26,8 +26,15 @@ export interface BugClusterRow {
   primary_investigation_id: string | null;
   primary_failure_signature: string | null;
   root_cause_summary: string | null;
+  owner_id: string | null;
   created_at: Date;
   updated_at: Date;
+}
+
+/** Ownership scope. When isAdmin=true, no WHERE filter is added. */
+export interface Scope {
+  ownerId: string;
+  isAdmin: boolean;
 }
 
 export interface BugClusterMemberRow {
@@ -58,6 +65,7 @@ export interface UpsertClusterInput {
   primaryInvestigationId: string | null;
   primaryFailureSignature: string | null;
   rootCauseSummary: string | null;
+  ownerId?: string | null;
 }
 
 export async function upsertCluster(
@@ -70,8 +78,8 @@ export async function upsertCluster(
        first_seen_at, last_seen_at, occurrence_count, affected_test_count,
        affected_page_count, affected_endpoint_count, regression_status,
        primary_run_id, primary_investigation_id, primary_failure_signature,
-       root_cause_summary, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,NOW())
+       root_cause_summary, owner_id, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,NOW())
      ON CONFLICT (fingerprint_key) DO UPDATE SET
        title = EXCLUDED.title,
        description = EXCLUDED.description,
@@ -109,6 +117,7 @@ export async function upsertCluster(
       input.primaryInvestigationId,
       input.primaryFailureSignature,
       input.rootCauseSummary,
+      input.ownerId ?? null,
     ],
   );
   return rows[0]!;
@@ -139,11 +148,16 @@ export async function listClusters(
     status?: ClusterStatus;
     severity?: string;
     regressionStatus?: RegressionStatus;
+    scope?: Scope;
   },
 ): Promise<{ items: BugClusterRow[]; total: number }> {
   const offset = (opts.page - 1) * opts.limit;
   const filters: string[] = [];
   const params: unknown[] = [];
+  if (opts.scope && !opts.scope.isAdmin) {
+    params.push(opts.scope.ownerId);
+    filters.push(`owner_id = $${params.length}`);
+  }
   if (opts.status) {
     params.push(opts.status);
     filters.push(`status = $${params.length}`);
@@ -157,6 +171,7 @@ export async function listClusters(
     filters.push(`regression_status = $${params.length}`);
   }
   const where = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
+  const filterCount = filters.length;
   params.push(opts.limit, offset);
   const items = await exec.query<BugClusterRow>(
     `SELECT * FROM bug_clusters ${where} ORDER BY last_seen_at DESC
@@ -165,7 +180,7 @@ export async function listClusters(
   );
   const countRes = await exec.query<{ count: string }>(
     `SELECT COUNT(*)::text AS count FROM bug_clusters ${where}`,
-    params.slice(0, filters.length),
+    params.slice(0, filterCount),
   );
   return { items: items.rows, total: Number(countRes.rows[0]!.count) };
 }
@@ -173,20 +188,28 @@ export async function listClusters(
 export async function getClusterById(
   exec: Executor,
   id: string,
+  scope?: Scope,
 ): Promise<BugClusterRow | null> {
   const { rows } = await exec.query<BugClusterRow>('SELECT * FROM bug_clusters WHERE id = $1', [id]);
-  return rows[0] ?? null;
+  const row = rows[0] ?? null;
+  if (!row) return null;
+  if (scope && !scope.isAdmin && row.owner_id !== scope.ownerId) return null;
+  return row;
 }
 
 export async function getClusterByFingerprintKey(
   exec: Executor,
   key: string,
+  scope?: Scope,
 ): Promise<BugClusterRow | null> {
   const { rows } = await exec.query<BugClusterRow>(
     'SELECT * FROM bug_clusters WHERE fingerprint_key = $1',
     [key],
   );
-  return rows[0] ?? null;
+  const row = rows[0] ?? null;
+  if (!row) return null;
+  if (scope && !scope.isAdmin && row.owner_id !== scope.ownerId) return null;
+  return row;
 }
 
 export async function listMembersForCluster(

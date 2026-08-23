@@ -152,6 +152,10 @@ export function ApplicationsView({ role, onNavigateToTests }: ApplicationsViewPr
         role={role}
         onBack={() => setSelectedId(null)}
         onGenerateTests={() => onNavigateToTests(selected.id)}
+        onDeleted={() => {
+          setSelectedId(null);
+          setRefreshTick((t) => t + 1);
+        }}
       />
     );
   }

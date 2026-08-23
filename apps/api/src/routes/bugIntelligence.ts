@@ -12,10 +12,26 @@ import {
   listMembersForCluster,
   mapClusterRow,
   mapMemberRow,
+  type Scope,
 } from '../db/repositories/bugClusterRepo.js';
 import { getTestRunById } from '../db/repositories/testRunRepo.js';
+import { requireRole, requireUser } from '../middleware/authenticate.js';
+import { createRateLimiter, userKey } from '../middleware/rateLimit.js';
 
 export const bugIntelligenceRouter = Router();
+
+// Rate limit: 10/hr per user for LLM-heavy analyze.
+const analyzeLimiter = createRateLimiter({
+  windowMs: 60 * 60_000,
+  max: 10,
+  keyFn: userKey,
+  message: 'Too many requests. Please try again later.',
+});
+
+function scopeOf(req: Request): Scope | undefined {
+  if (!req.user) return undefined;
+  return { ownerId: req.user.id, isAdmin: req.user.role === 'admin' };
+}
 
 const AnalyzeSchema = z.object({
   since: z.string().datetime().optional(),
@@ -24,6 +40,8 @@ const AnalyzeSchema = z.object({
 
 bugIntelligenceRouter.post(
   '/ai/bug-intelligence/analyze',
+  requireRole('qa_engineer'),
+  analyzeLimiter,
   async (req: Request, res: Response, next: NextFunction) => {
     const parsed = AnalyzeSchema.safeParse(req.body ?? {});
     if (!parsed.success) return next(new HttpError(400, 'Invalid analyze request'));
@@ -39,6 +57,7 @@ bugIntelligenceRouter.post(
     }
 
     try {
+      const scope = scopeOf(req);
       const service = new BugIntelligenceService({
         pool,
         provider,
@@ -47,6 +66,8 @@ bugIntelligenceRouter.post(
         maxCandidatePairs: env.BUG_INTEL_MAX_CANDIDATE_PAIRS,
         maxAiComparisons: env.BUG_INTEL_MAX_AI_COMPARISONS,
         minResolutionPassStreak: env.BUG_INTEL_MIN_RESOLUTION_STREAK,
+        ownerId: req.user?.id ?? null,
+        ...(scope ? { scope } : {}),
       });
       const input: { since?: Date; testRunIds?: string[] } = {};
       if (parsed.data.since) input.since = new Date(parsed.data.since);
@@ -73,16 +94,19 @@ const ListSchema = z.object({
 
 bugIntelligenceRouter.get(
   '/ai/bug-intelligence/clusters',
+  requireUser,
   async (req: Request, res: Response, next: NextFunction) => {
     const parsed = ListSchema.safeParse(req.query);
     if (!parsed.success) return next(new HttpError(400, 'Invalid list request'));
     try {
+      const scope = scopeOf(req);
       const { items, total } = await listClusters(pool, {
         page: parsed.data.page,
         limit: parsed.data.limit,
         ...(parsed.data.status ? { status: parsed.data.status } : {}),
         ...(parsed.data.severity ? { severity: parsed.data.severity } : {}),
         ...(parsed.data.regressionStatus ? { regressionStatus: parsed.data.regressionStatus } : {}),
+        ...(scope ? { scope } : {}),
       });
       res.json({
         items: items.map(mapClusterRow),
@@ -100,11 +124,12 @@ const UuidParam = z.string().uuid();
 
 bugIntelligenceRouter.get(
   '/ai/bug-intelligence/clusters/:id',
+  requireUser,
   async (req: Request, res: Response, next: NextFunction) => {
     const idCheck = UuidParam.safeParse(req.params.id);
     if (!idCheck.success) return next(new HttpError(400, 'Invalid cluster id'));
     try {
-      const cluster = await getClusterById(pool, idCheck.data);
+      const cluster = await getClusterById(pool, idCheck.data, scopeOf(req));
       if (!cluster) return next(new HttpError(404, 'Cluster not found'));
       const members = await listMembersForCluster(pool, cluster.id);
       const memberViews = await Promise.all(

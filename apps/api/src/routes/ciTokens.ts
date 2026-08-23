@@ -10,6 +10,14 @@ import {
   listActive,
   revokeById,
 } from '../db/repositories/ciTokenRepo.js';
+import { createRateLimiter, userKey } from '../middleware/rateLimit.js';
+
+const createTokenLimiter = createRateLimiter({
+  windowMs: 60 * 60_000,
+  max: 10,
+  keyFn: userKey,
+  message: 'Too many requests. Please try again later.',
+});
 
 export const ciTokensRouter = Router();
 
@@ -23,6 +31,7 @@ const UuidParam = z.string().uuid();
 ciTokensRouter.post(
   '/ci-tokens',
   requireRole('admin'),
+  createTokenLimiter,
   async (req: Request, res: Response, next: NextFunction) => {
     const parsed = CreateSchema.safeParse(req.body);
     if (!parsed.success) return next(new HttpError(400, 'Invalid CI token request'));

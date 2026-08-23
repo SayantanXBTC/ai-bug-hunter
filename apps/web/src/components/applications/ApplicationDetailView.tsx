@@ -8,6 +8,7 @@ import {
   IconExternalLink,
   IconLayers,
   IconFileText,
+  IconTrash,
 } from '../icons.js';
 import { formatNumber, formatDuration, formatRelativeTime } from '../../lib/format.js';
 import { filterFormFields, sanitizeField } from '../../lib/sanitize.js';
@@ -28,6 +29,7 @@ interface ApplicationDetailViewProps {
   role: UserRole;
   onBack: () => void;
   onGenerateTests: () => void;
+  onDeleted?: () => void;
 }
 
 const TABS: Array<{ id: TabId; label: string }> = [
@@ -43,11 +45,45 @@ export function ApplicationDetailView({
   role,
   onBack,
   onGenerateTests,
+  onDeleted,
 }: ApplicationDetailViewProps): JSX.Element {
   const canWrite = role === 'admin' || role === 'qa_engineer';
+  const canDelete = role === 'admin' || role === 'qa_engineer';
   const [tab, setTab] = useState<TabId>('overview');
   const [discovery, setDiscovery] = useState<DiscoveryResult | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function handleDelete(): Promise<void> {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/applications/${application.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (res.status === 204) {
+        setConfirmOpen(false);
+        if (onDeleted) onDeleted();
+        else onBack();
+        return;
+      }
+      let msg = `HTTP ${res.status}`;
+      try {
+        const body = (await res.json()) as { error?: { message?: string } };
+        if (body?.error?.message) msg = body.error.message;
+      } catch {
+        // ignore
+      }
+      setDeleteError(msg);
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : 'Failed to delete application');
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   // Reset discovery when the selected application changes.
   useEffect(() => {
@@ -108,8 +144,68 @@ export function ApplicationDetailView({
               </button>
             </>
           )}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => {
+                setDeleteError(null);
+                setConfirmOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 rounded border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400"
+              aria-label="Delete application"
+            >
+              <IconTrash size={14} />
+              Delete
+            </button>
+          )}
         </div>
       </header>
+
+      {confirmOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Confirm delete application"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        >
+          <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-lg">
+            <h2 className="text-base font-semibold text-neutral-900">
+              Delete &quot;{application.name}&quot;?
+            </h2>
+            <p className="mt-2 text-sm text-neutral-600">
+              This will permanently remove the application. Any associated test cases and
+              test runs must be deleted first — if children exist, the API will refuse the
+              request. This action cannot be undone.
+            </p>
+            {deleteError && (
+              <div
+                role="alert"
+                className="mt-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
+              >
+                {deleteError}
+              </div>
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(false)}
+                disabled={deleting}
+                className="rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDelete()}
+                disabled={deleting}
+                className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="border-b border-neutral-200">

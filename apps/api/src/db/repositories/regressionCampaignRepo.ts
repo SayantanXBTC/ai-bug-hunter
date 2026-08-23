@@ -23,7 +23,14 @@ export interface RegressionCampaignRow {
   error_runs: number;
   quality: CampaignQuality | null;
   cancel_requested: boolean;
+  owner_id: string | null;
   created_at: Date;
+}
+
+/** Ownership scope. When isAdmin=true, no WHERE filter is added. */
+export interface Scope {
+  ownerId: string;
+  isAdmin: boolean;
 }
 
 export interface CampaignTestRow {
@@ -47,13 +54,14 @@ export interface InsertCampaignInput {
   strategy: SelectionStrategy;
   requestedTestCount: number;
   selectedTestCount: number;
+  ownerId?: string | null;
 }
 
 export async function insertCampaign(exec: Executor, input: InsertCampaignInput): Promise<RegressionCampaignRow> {
   const { rows } = await exec.query<RegressionCampaignRow>(
     `INSERT INTO regression_campaigns
-       (application_id, name, status, trigger, selection_strategy, requested_test_count, selected_test_count)
-     VALUES ($1,$2,'queued',$3,$4,$5,$6)
+       (application_id, name, status, trigger, selection_strategy, requested_test_count, selected_test_count, owner_id)
+     VALUES ($1,$2,'queued',$3,$4,$5,$6,$7)
      RETURNING *`,
     [
       input.applicationId,
@@ -62,6 +70,7 @@ export async function insertCampaign(exec: Executor, input: InsertCampaignInput)
       input.strategy,
       input.requestedTestCount,
       input.selectedTestCount,
+      input.ownerId ?? null,
     ],
   );
   return rows[0]!;
@@ -172,21 +181,32 @@ export async function updateCampaignTest(
   );
 }
 
-export async function getCampaignById(exec: Executor, id: string): Promise<RegressionCampaignRow | null> {
+export async function getCampaignById(
+  exec: Executor,
+  id: string,
+  scope?: Scope,
+): Promise<RegressionCampaignRow | null> {
   const { rows } = await exec.query<RegressionCampaignRow>(
     'SELECT * FROM regression_campaigns WHERE id = $1',
     [id],
   );
-  return rows[0] ?? null;
+  const row = rows[0] ?? null;
+  if (!row) return null;
+  if (scope && !scope.isAdmin && row.owner_id !== scope.ownerId) return null;
+  return row;
 }
 
 export async function listCampaigns(
   exec: Executor,
-  opts: { page: number; limit: number; status?: CampaignStatus; applicationId?: string },
+  opts: { page: number; limit: number; status?: CampaignStatus; applicationId?: string; scope?: Scope },
 ): Promise<{ items: RegressionCampaignRow[]; total: number }> {
   const offset = (opts.page - 1) * opts.limit;
   const filters: string[] = [];
   const params: unknown[] = [];
+  if (opts.scope && !opts.scope.isAdmin) {
+    params.push(opts.scope.ownerId);
+    filters.push(`owner_id = $${params.length}`);
+  }
   if (opts.status) {
     params.push(opts.status);
     filters.push(`status = $${params.length}`);

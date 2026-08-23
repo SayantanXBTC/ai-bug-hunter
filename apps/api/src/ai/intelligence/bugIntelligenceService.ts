@@ -24,6 +24,10 @@ export interface BugIntelligenceServiceOptions {
   maxCandidatePairs: number;
   maxAiComparisons: number;
   minResolutionPassStreak: number;
+  /** Owner id to stamp on newly-created bug_clusters rows. */
+  ownerId?: string | null;
+  /** Optional ownership scope for reading test_runs during analyze. */
+  scope?: { ownerId: string; isAdmin: boolean };
 }
 
 export interface AnalyzeInput {
@@ -114,6 +118,7 @@ export class BugIntelligenceService {
         primaryInvestigationId: d.primaryInvestigationId,
         primaryFailureSignature: d.primaryFailureSignature,
         rootCauseSummary: d.rootCauseSummary,
+        ownerId: this.opts.ownerId ?? null,
       });
       for (const m of d.members) {
         await upsertMember(this.opts.pool, savedRow.id, m.testRunId, m.similarityScore, m.membershipReason);
@@ -133,13 +138,21 @@ export class BugIntelligenceService {
   }
 
   private async loadFailedRuns(input: AnalyzeInput): Promise<TestRunRecord[]> {
+    const scope = this.opts.scope;
     if (input.testRunIds && input.testRunIds.length > 0) {
+      const params: unknown[] = [input.testRunIds];
+      let where = "id = ANY($1::uuid[]) AND status IN ('failed','error')";
+      if (scope && !scope.isAdmin) {
+        params.push(scope.ownerId);
+        where += ` AND owner_id = $${params.length}`;
+      }
+      params.push(this.opts.maxRuns);
       const { rows } = await this.opts.pool.query<TestRunRecord>(
         `SELECT * FROM test_runs
-         WHERE id = ANY($1::uuid[]) AND status IN ('failed','error')
+         WHERE ${where}
          ORDER BY created_at DESC
-         LIMIT $2`,
-        [input.testRunIds, this.opts.maxRuns],
+         LIMIT $${params.length}`,
+        params,
       );
       return rows;
     }
@@ -148,6 +161,10 @@ export class BugIntelligenceService {
     if (input.since) {
       params.push(input.since);
       where += ` AND created_at >= $${params.length}`;
+    }
+    if (scope && !scope.isAdmin) {
+      params.push(scope.ownerId);
+      where += ` AND owner_id = $${params.length}`;
     }
     params.push(this.opts.maxRuns);
     const { rows } = await this.opts.pool.query<TestRunRecord>(

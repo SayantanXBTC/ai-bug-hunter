@@ -20,6 +20,7 @@ function makeRun(overrides: Partial<TestRunRecord> = {}): TestRunRecord {
     error_name: 'TimeoutError',
     error_message: 'locator.click: Timeout 3000ms exceeded',
     error_step_index: 2,
+    owner_id: null,
     created_at: new Date('2026-01-01T00:00:06Z'),
     ...overrides,
   };

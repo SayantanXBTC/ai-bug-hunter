@@ -47,6 +47,8 @@ vi.mock('../db/repositories/testRunRepo.js', () => ({
 const { createApp } = await import('../app.js');
 
 beforeEach(() => {
+  process.env.NODE_ENV = 'test';
+  process.env.TEST_AUTH_BYPASS = '1';
   mockAnalyze.mockReset();
   mockList.mockReset();
   mockGet.mockReset();

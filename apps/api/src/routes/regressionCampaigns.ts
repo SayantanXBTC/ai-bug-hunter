@@ -10,6 +10,7 @@ import {
   getCampaignById,
   listCampaignTests,
   listCampaigns,
+  type Scope,
 } from '../db/repositories/regressionCampaignRepo.js';
 import { getTestCaseById } from '../db/repositories/testCaseRepo.js';
 import { BugIntelligenceService } from '../ai/intelligence/bugIntelligenceService.js';
@@ -32,6 +33,26 @@ import {
 } from '../db/repositories/evidenceRepo.js';
 import { sanitizeDom } from '../ai/investigation/investigationContext.js';
 import { requireRole, requireUser } from '../middleware/authenticate.js';
+import { createRateLimiter, userKey } from '../middleware/rateLimit.js';
+
+// Rate limits for campaign endpoints (per-user; message shown uniformly).
+const createLimiter = createRateLimiter({
+  windowMs: 60 * 60_000,
+  max: 20,
+  keyFn: userKey,
+  message: 'Too many requests. Please try again later.',
+});
+const runLimiter = createRateLimiter({
+  windowMs: 60 * 60_000,
+  max: 10,
+  keyFn: userKey,
+  message: 'Too many requests. Please try again later.',
+});
+
+function scopeOf(req: Request): Scope | undefined {
+  if (!req.user) return undefined;
+  return { ownerId: req.user.id, isAdmin: req.user.role === 'admin' };
+}
 
 // TODO(security/ssrf): validate each stored TestDefinition.targetUrl via
 // assertTargetUrlAllowed() before executing in RegressionCampaignService. Deferred
@@ -140,6 +161,7 @@ function buildService(): RegressionCampaignService {
 regressionCampaignsRouter.post(
   '/regression-campaigns',
   requireRole('qa_engineer'),
+  createLimiter,
   async (req: Request, res: Response, next: NextFunction) => {
     const parsed = CreateSchema.safeParse(req.body);
     if (!parsed.success) return next(new HttpError(400, 'Invalid campaign request'));
@@ -151,6 +173,7 @@ regressionCampaignsRouter.post(
         strategy: parsed.data.strategy,
         ...(parsed.data.maxTests !== undefined ? { maxTests: parsed.data.maxTests } : {}),
         ...(parsed.data.trigger ? { trigger: parsed.data.trigger } : {}),
+        ownerId: req.user?.id ?? null,
       });
       res.status(201).json({ campaign: preview.campaign, selected: preview.selected });
     } catch (err) {
@@ -163,10 +186,14 @@ regressionCampaignsRouter.post(
 regressionCampaignsRouter.post(
   '/regression-campaigns/:id/run',
   requireRole('qa_engineer'),
+  runLimiter,
   async (req: Request, res: Response, next: NextFunction) => {
     const id = UuidParam.safeParse(req.params.id);
     if (!id.success) return next(new HttpError(400, 'Invalid id'));
     try {
+      // Ownership check: 404 for cross-tenant to avoid enumeration.
+      const existing = await getCampaignById(pool, id.data, scopeOf(req));
+      if (!existing) return next(new HttpError(404, 'Campaign not found'));
       const svc = buildService();
       const row = await svc.runCampaign(id.data);
       res.json(row);
@@ -183,6 +210,8 @@ regressionCampaignsRouter.post(
     const id = UuidParam.safeParse(req.params.id);
     if (!id.success) return next(new HttpError(400, 'Invalid id'));
     try {
+      const existing = await getCampaignById(pool, id.data, scopeOf(req));
+      if (!existing) return next(new HttpError(404, 'Campaign not found'));
       const svc = buildService();
       const row = await svc.cancelCampaign(id.data);
       if (!row) return next(new HttpError(404, 'Campaign not found'));
@@ -206,6 +235,8 @@ regressionCampaignsRouter.get(
       };
       if (parsed.data.status) opts.status = parsed.data.status;
       if (parsed.data.applicationId) opts.applicationId = parsed.data.applicationId;
+      const scope = scopeOf(req);
+      if (scope) opts.scope = scope;
       const { items, total } = await listCampaigns(pool, opts);
       res.json({ items, page: parsed.data.page, limit: parsed.data.limit, total });
     } catch (err) {
@@ -221,7 +252,7 @@ regressionCampaignsRouter.get(
     const id = UuidParam.safeParse(req.params.id);
     if (!id.success) return next(new HttpError(400, 'Invalid id'));
     try {
-      const campaign = await getCampaignById(pool, id.data);
+      const campaign = await getCampaignById(pool, id.data, scopeOf(req));
       if (!campaign) return next(new HttpError(404, 'Campaign not found'));
       const members = await listCampaignTests(pool, id.data);
       const memberDetail = await Promise.all(

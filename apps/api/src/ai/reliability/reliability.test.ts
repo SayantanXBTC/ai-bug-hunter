@@ -21,6 +21,7 @@ function run(
     error_name: errorMessage ? 'Error' : null,
     error_message: errorMessage,
     error_step_index: null,
+    owner_id: null,
     created_at: startedAt,
   };
 }

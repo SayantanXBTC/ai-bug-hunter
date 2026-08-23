@@ -15,6 +15,14 @@ import {
   upsertInvestigation,
 } from '../db/repositories/investigationRepo.js';
 import { requireRole, requireUser } from '../middleware/authenticate.js';
+import { createRateLimiter, userKey } from '../middleware/rateLimit.js';
+
+const investigateLimiter = createRateLimiter({
+  windowMs: 60 * 60_000,
+  max: 30,
+  keyFn: userKey,
+  message: 'Too many requests. Please try again later.',
+});
 
 export const investigationRouter = Router();
 
@@ -41,6 +49,7 @@ investigationRouter.get(
 investigationRouter.post(
   '/ai/investigate/:testRunId',
   requireRole('qa_engineer'),
+  investigateLimiter,
   async (req: Request, res: Response, next: NextFunction) => {
     const idCheck = UuidParam.safeParse(req.params.testRunId);
     if (!idCheck.success) return next(new HttpError(400, 'Invalid test run id'));
