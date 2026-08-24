@@ -69,8 +69,13 @@ export function DiscoveryPanel({
       if (!res.ok) {
         let msg = `HTTP ${res.status}`;
         try {
-          const body = (await res.json()) as { error?: string; message?: string };
-          if (body?.error) msg = body.error;
+          const body = (await res.json()) as {
+            error?: string | { message?: string; code?: string };
+            message?: string;
+          };
+          if (typeof body?.error === 'string') msg = body.error;
+          else if (body?.error && typeof body.error === 'object' && body.error.message)
+            msg = body.error.message;
           else if (body?.message) msg = body.message;
         } catch {
           // ignore
