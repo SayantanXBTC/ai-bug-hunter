@@ -66,7 +66,11 @@ export function SettingsView({ user, onLogout }: Props): JSX.Element {
       <ThemedPageHeader
         eyebrow="SYSTEM CONTROL CENTER"
         title="System Settings"
-        subtitle="Manage appearance, AI engine, account, CI integration and data retention."
+        subtitle={
+          user.role === 'admin'
+            ? 'Manage appearance, AI engine, account, CI integration and data retention.'
+            : 'Manage appearance and account preferences.'
+        }
       />
 
       <Panel eyebrow="APPEARANCE">
@@ -111,47 +115,45 @@ export function SettingsView({ user, onLogout }: Props): JSX.Element {
         </div>
       </Panel>
 
-      <Panel eyebrow="AI ENGINE">
-        {user.role !== 'admin' ? (
-          <div className="text-xs text-[var(--text-subtle)]">
-            AI Engine configuration is visible to administrators only.
-          </div>
-        ) : error ? (
-          <div className="text-sm text-[var(--danger)]">Failed to load: {error}</div>
-        ) : !snapshot ? (
-          <div className="text-sm text-[var(--text-muted)]">Loading…</div>
-        ) : (
-          <dl className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
-            <Row label="Provider" value={snapshot.llm.provider} />
-            <Row label="Model" value={snapshot.llm.model} />
-            <Row label="Enabled" value={String(snapshot.llm.enabled)} />
-            <Row
-              label="Max tokens"
-              value={snapshot.llm.maxTokens === undefined ? '—' : String(snapshot.llm.maxTokens)}
-            />
-            <Row
-              label="Temperature"
-              value={
-                snapshot.llm.temperature === undefined ? '—' : String(snapshot.llm.temperature)
-              }
-            />
-            <Row
-              label="Timeout"
-              value={
-                snapshot.llm.timeoutMs === undefined ? '—' : `${snapshot.llm.timeoutMs} ms`
-              }
-            />
-            <Row
-              label="API key"
-              value={
-                snapshot.llm.apiKeyConfigured ? '● CONFIGURED' : '○ NOT CONFIGURED'
-              }
-              tone={snapshot.llm.apiKeyConfigured ? 'success' : 'muted'}
-            />
-            <Row label="Configured via" value={snapshot.configuredVia} />
-          </dl>
-        )}
-      </Panel>
+      {user.role === 'admin' && (
+        <Panel eyebrow="AI ENGINE">
+          {error ? (
+            <div className="text-sm text-[var(--danger)]">Failed to load: {error}</div>
+          ) : !snapshot ? (
+            <div className="text-sm text-[var(--text-muted)]">Loading…</div>
+          ) : (
+            <dl className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
+              <Row label="Provider" value={snapshot.llm.provider} />
+              <Row label="Model" value={snapshot.llm.model} />
+              <Row label="Enabled" value={String(snapshot.llm.enabled)} />
+              <Row
+                label="Max tokens"
+                value={snapshot.llm.maxTokens === undefined ? '—' : String(snapshot.llm.maxTokens)}
+              />
+              <Row
+                label="Temperature"
+                value={
+                  snapshot.llm.temperature === undefined ? '—' : String(snapshot.llm.temperature)
+                }
+              />
+              <Row
+                label="Timeout"
+                value={
+                  snapshot.llm.timeoutMs === undefined ? '—' : `${snapshot.llm.timeoutMs} ms`
+                }
+              />
+              <Row
+                label="API key"
+                value={
+                  snapshot.llm.apiKeyConfigured ? '● CONFIGURED' : '○ NOT CONFIGURED'
+                }
+                tone={snapshot.llm.apiKeyConfigured ? 'success' : 'muted'}
+              />
+              <Row label="Configured via" value={snapshot.configuredVia} />
+            </dl>
+          )}
+        </Panel>
+      )}
 
       <Panel eyebrow="ACCOUNT">
         <dl className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
@@ -182,32 +184,30 @@ export function SettingsView({ user, onLogout }: Props): JSX.Element {
         </Panel>
       )}
 
-      <Panel eyebrow="DATA RETENTION">
-        {user.role !== 'admin' ? (
-          <div className="text-xs text-[var(--text-subtle)]">
-            Retention state is visible to administrators only.
-          </div>
-        ) : !snapshot ? (
-          <div className="text-sm text-[var(--text-muted)]">Loading…</div>
-        ) : (
-          <div className="flex items-center gap-3 text-sm">
-            <span
-              className="inline-block h-2 w-2 rounded-full"
-              style={{
-                background: snapshot.retention.enabled ? 'var(--success)' : 'var(--text-subtle)',
-              }}
-              aria-hidden
-            />
-            <span
-              className={`font-mono text-[10px] font-semibold uppercase tracking-[0.25em] ${
-                snapshot.retention.enabled ? 'text-[var(--success)]' : 'text-[var(--text-subtle)]'
-              }`}
-            >
-              {snapshot.retention.enabled ? 'Retention active' : 'Retention disabled'}
-            </span>
-          </div>
-        )}
-      </Panel>
+      {user.role === 'admin' && (
+        <Panel eyebrow="DATA RETENTION">
+          {!snapshot ? (
+            <div className="text-sm text-[var(--text-muted)]">Loading…</div>
+          ) : (
+            <div className="flex items-center gap-3 text-sm">
+              <span
+                className="inline-block h-2 w-2 rounded-full"
+                style={{
+                  background: snapshot.retention.enabled ? 'var(--success)' : 'var(--text-subtle)',
+                }}
+                aria-hidden
+              />
+              <span
+                className={`font-mono text-[10px] font-semibold uppercase tracking-[0.25em] ${
+                  snapshot.retention.enabled ? 'text-[var(--success)]' : 'text-[var(--text-subtle)]'
+                }`}
+              >
+                {snapshot.retention.enabled ? 'Retention active' : 'Retention disabled'}
+              </span>
+            </div>
+          )}
+        </Panel>
+      )}
     </div>
   );
 }
