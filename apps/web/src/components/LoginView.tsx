@@ -1,6 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { LoginScene } from './login/LoginScene.js';
 import { LoginCard } from './login/LoginCard.js';
+import {
+  fetchPublicAuthConfig,
+  signInWithGoogle,
+  type FirebaseWebConfig,
+} from '../lib/firebase.js';
 
 interface Props {
   onAuthenticated: () => void;
@@ -12,6 +17,16 @@ export function LoginView({ onAuthenticated }: Props): JSX.Element {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [googleConfig, setGoogleConfig] = useState<FirebaseWebConfig | null>(null);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
+
+  useEffect(() => {
+    void fetchPublicAuthConfig()
+      .then((cfg) => {
+        if (cfg.googleAuthEnabled && cfg.firebase) setGoogleConfig(cfg.firebase);
+      })
+      .catch(() => undefined);
+  }, []);
 
   async function submit(ev: FormEvent): Promise<void> {
     ev.preventDefault();
@@ -64,6 +79,34 @@ export function LoginView({ onAuthenticated }: Props): JSX.Element {
     }
   }
 
+  async function handleGoogle(): Promise<void> {
+    if (!googleConfig) return;
+    setGoogleSubmitting(true);
+    setError(null);
+    try {
+      const idToken = await signInWithGoogle(googleConfig);
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body?.error?.message ?? `Google sign-in failed (${res.status})`);
+        return;
+      }
+      onAuthenticated();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Google sign-in failed';
+      // Firebase throws e.code === 'auth/popup-closed-by-user' when user cancels.
+      if (/popup-closed-by-user|cancelled-popup-request/.test(msg)) return;
+      setError(msg);
+    } finally {
+      setGoogleSubmitting(false);
+    }
+  }
+
   return (
     <LoginScene>
       <LoginCard
@@ -79,6 +122,9 @@ export function LoginView({ onAuthenticated }: Props): JSX.Element {
           setMode(mode === 'login' ? 'register' : 'login');
           setError(null);
         }}
+        googleEnabled={googleConfig !== null}
+        googleSubmitting={googleSubmitting}
+        onGoogleSignIn={handleGoogle}
       />
     </LoginScene>
   );

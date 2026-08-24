@@ -1,0 +1,11 @@
+{
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "AI Bug Hunter",
+        "supportEmail": "bhattacharjeesayantan86@gmail.com"
+      }
+    }
+  }
+}

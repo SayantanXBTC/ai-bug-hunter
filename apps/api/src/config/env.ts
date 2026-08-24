@@ -66,6 +66,14 @@ const EnvSchema = z.object({
     .default(false)
     .transform((v) => (typeof v === 'boolean' ? v : v.toLowerCase() === 'true' || v === '1')),
   TEST_AUTH_BYPASS: z.string().default(''),
+  FIREBASE_PROJECT_ID: z.string().default(''),
+  FIREBASE_AUTH_ENABLED: z
+    .union([z.boolean(), z.string()])
+    .default(false)
+    .transform((v) => (typeof v === 'boolean' ? v : v.toLowerCase() === 'true' || v === '1')),
+  FIREBASE_WEB_API_KEY: z.string().default(''),
+  FIREBASE_WEB_APP_ID: z.string().default(''),
+  FIREBASE_AUTH_DOMAIN: z.string().default(''),
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;
