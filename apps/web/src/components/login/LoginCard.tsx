@@ -6,7 +6,6 @@ import {
   IconMail,
   IconLock,
   IconArrowRight,
-  IconHexLogo,
 } from '../icons.js';
 
 interface LoginCardProps {
@@ -213,13 +212,7 @@ export function LoginCard(props: LoginCardProps): JSX.Element {
           />
 
           <div className="relative flex flex-col items-center text-center">
-            <div
-              className="rounded-full border border-white/10 p-2 text-violet-400"
-              style={{ filter: 'drop-shadow(0 0 12px rgba(167,139,250,0.7))' }}
-            >
-              <IconHexLogo size={40} />
-            </div>
-            <h1 className="mt-4 text-xl font-semibold tracking-wide text-white">
+            <h1 className="text-xl font-semibold tracking-wide text-white">
               <span className="bg-gradient-to-b from-white to-white/70 bg-clip-text text-transparent">
                 {mode === 'login' ? 'Welcome back' : 'Create an account'}
               </span>
