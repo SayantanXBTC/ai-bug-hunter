@@ -44,19 +44,27 @@ export function App(): JSX.Element {
           }}
         />
         <main className="flex-1 overflow-y-auto p-6">
-          {view === 'dashboard' && <Dashboard onNavigate={(t) => setView(t)} />}
+          {view === 'dashboard' && (
+            <PageShell>
+              <Dashboard onNavigate={(t) => setView(t)} />
+            </PageShell>
+          )}
           {view === 'applications' && (
-            <ApplicationsView role={role} onNavigateToTests={() => setView('tests')} />
+            <PageShell>
+              <ApplicationsView role={role} onNavigateToTests={() => setView('tests')} />
+            </PageShell>
           )}
           {view === 'tests' && (
-            <TestsView
-              role={role}
-              onNavigateToRun={(runId) => {
-                setSelectedRunId(runId);
-                setView('test-runs');
-              }}
-              onNavigateToApplications={() => setView('applications')}
-            />
+            <PageShell>
+              <TestsView
+                role={role}
+                onNavigateToRun={(runId) => {
+                  setSelectedRunId(runId);
+                  setView('test-runs');
+                }}
+                onNavigateToApplications={() => setView('applications')}
+              />
+            </PageShell>
           )}
           {view === 'test-runs' && (
             <PageShell>
@@ -77,9 +85,15 @@ export function App(): JSX.Element {
               <TestReliability />
             </PageShell>
           )}
-          {view === 'regression' && <RegressionCampaigns />}
+          {view === 'regression' && (
+            <PageShell>
+              <RegressionCampaigns />
+            </PageShell>
+          )}
           {view === 'settings' && (
-            <SettingsView user={auth.user} onLogout={() => void auth.logout()} />
+            <PageShell>
+              <SettingsView user={auth.user} onLogout={() => void auth.logout()} />
+            </PageShell>
           )}
         </main>
       </div>

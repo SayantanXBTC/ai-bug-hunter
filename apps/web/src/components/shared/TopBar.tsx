@@ -74,9 +74,41 @@ export function TopBar({ user, onLogout, onNavigate }: TopBarProps): JSX.Element
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-6 backdrop-blur">
-      <div className="text-sm font-medium tracking-wide text-[var(--text)]">
-        AI Bug Hunter
+    <header
+      className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[var(--border)] px-6 backdrop-blur-md"
+      style={{
+        background:
+          'linear-gradient(180deg, var(--surface-glass) 0%, var(--surface) 100%)',
+      }}
+    >
+      {/* Signature top rule */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{
+          background:
+            'linear-gradient(90deg, transparent 0%, var(--primary) 40%, var(--secondary) 60%, transparent 100%)',
+          opacity: 0.35,
+        }}
+      />
+      <div className="flex items-center gap-2.5 text-sm font-medium tracking-wide text-[var(--text)]">
+        <svg
+          width={18}
+          height={18}
+          viewBox="0 0 100 100"
+          aria-hidden="true"
+          focusable="false"
+          className="text-[var(--primary)]"
+        >
+          <polygon
+            points="50,4 87,25 87,75 50,96 13,75 13,25"
+            fill="var(--primary-soft)"
+            stroke="currentColor"
+            strokeWidth={4}
+          />
+          <circle cx={50} cy={50} r={10} fill="currentColor" />
+        </svg>
+        <span>AI Bug Hunter</span>
       </div>
       <div className="flex items-center gap-2.5 text-sm">
         <ThemeToggle />
