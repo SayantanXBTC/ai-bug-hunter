@@ -14,6 +14,9 @@ export interface PoolConfig {
 }
 
 export function createPool(cfg: PoolConfig = {}): pg.Pool {
+  const useSsl =
+    (process.env.DATABASE_SSL ?? '').toLowerCase() === 'true' ||
+    process.env.NODE_ENV === 'production';
   const p = new Pool({
     host: cfg.host ?? env.DATABASE_HOST,
     port: cfg.port ?? env.DATABASE_PORT,
@@ -23,6 +26,7 @@ export function createPool(cfg: PoolConfig = {}): pg.Pool {
     max: cfg.max ?? 10,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
+    ...(useSsl ? { ssl: { rejectUnauthorized: false } } : {}),
   });
   if (cfg.schema) {
     const ident = cfg.schema.replace(/"/g, '""');

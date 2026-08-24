@@ -20,8 +20,8 @@ console.error('[api] migration failed:', err);
 console.warn(`[api] PostgreSQL unreachable: ${db.error ?? 'unknown error'}`);
   }
 
-  const server = app.listen(env.API_PORT, () => {
-console.log(`[api] listening on http://localhost:${env.API_PORT} (${env.NODE_ENV})`);
+  const server = app.listen((Number(process.env.PORT) || env.API_PORT), () => {
+console.log(`[api] listening on http://localhost:${(Number(process.env.PORT) || env.API_PORT)} (${env.NODE_ENV})`);
   });
 
   const shutdown = async (signal: string): Promise<void> => {
