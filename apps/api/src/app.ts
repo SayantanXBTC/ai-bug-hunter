@@ -31,7 +31,12 @@ export function createApp(): Express {
   // Ordering: id → security headers → cors → body parser → logger → auth → routes.
   app.use(requestIdMiddleware);
   app.use(securityHeadersMiddleware);
-  app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
+  app.use(
+    cors({
+      origin: env.FRONTEND_URL.trim().replace(/\/+$/, ''),
+      credentials: true,
+    }),
+  );
   app.use(express.json({ limit: '2mb' }));
   app.use(requestLoggerMiddleware);
   app.use(authenticate);
