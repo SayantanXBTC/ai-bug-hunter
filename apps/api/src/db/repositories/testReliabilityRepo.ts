@@ -68,35 +68,56 @@ export async function upsertReliability(
   return rows[0]!;
 }
 
+export interface ReliabilityScope {
+  ownerId: string;
+  isAdmin: boolean;
+}
+
 export async function listReliability(
   exec: Executor,
-  opts: { page: number; limit: number; status?: string; flakyOnly?: boolean; minRuns?: number },
+  opts: {
+    page: number;
+    limit: number;
+    status?: string;
+    flakyOnly?: boolean;
+    minRuns?: number;
+    scope?: ReliabilityScope;
+  },
 ): Promise<{ items: ReliabilityRow[]; total: number }> {
   const offset = (opts.page - 1) * opts.limit;
   const filters: string[] = [];
   const params: unknown[] = [];
   if (opts.status) {
     params.push(opts.status);
-    filters.push(`status = $${params.length}`);
+    filters.push(`trs.status = $${params.length}`);
   }
   if (opts.flakyOnly) {
-    filters.push(`status IN ('flaky','suspected_flaky')`);
+    filters.push(`trs.status IN ('flaky','suspected_flaky')`);
   }
   if (opts.minRuns !== undefined) {
     params.push(opts.minRuns);
-    filters.push(`total_runs >= $${params.length}`);
+    filters.push(`trs.total_runs >= $${params.length}`);
+  }
+  // Scope via test_case owner. Snapshots with NULL test_case_id are
+  // admin-only (legacy).
+  if (opts.scope && !opts.scope.isAdmin) {
+    params.push(opts.scope.ownerId);
+    filters.push(`tc.owner_id = $${params.length}`);
   }
   const where = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
+  const baseFrom = `FROM test_reliability_snapshots trs
+    LEFT JOIN test_cases tc ON tc.id = trs.test_case_id`;
   params.push(opts.limit, offset);
   const items = await exec.query<ReliabilityRow>(
-    `SELECT * FROM test_reliability_snapshots ${where}
-     ORDER BY flaky_score DESC, calculated_at DESC
+    `SELECT trs.* ${baseFrom} ${where}
+     ORDER BY trs.flaky_score DESC, trs.calculated_at DESC
      LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params,
   );
+  const countParams = params.slice(0, params.length - 2);
   const countRes = await exec.query<{ count: string }>(
-    `SELECT COUNT(*)::text AS count FROM test_reliability_snapshots ${where}`,
-    params.slice(0, filters.length - (opts.minRuns !== undefined ? 0 : 0)),
+    `SELECT COUNT(*)::text AS count ${baseFrom} ${where}`,
+    countParams,
   );
   return { items: items.rows, total: Number(countRes.rows[0]!.count) };
 }
@@ -104,10 +125,19 @@ export async function listReliability(
 export async function getReliabilityByExternalId(
   exec: Executor,
   externalTestId: string,
+  scope?: ReliabilityScope,
 ): Promise<ReliabilityRow | null> {
+  const params: unknown[] = [externalTestId];
+  let ownershipFilter = '';
+  if (scope && !scope.isAdmin) {
+    params.push(scope.ownerId);
+    ownershipFilter = ` AND tc.owner_id = $${params.length}`;
+  }
   const { rows } = await exec.query<ReliabilityRow>(
-    'SELECT * FROM test_reliability_snapshots WHERE external_test_id = $1',
-    [externalTestId],
+    `SELECT trs.* FROM test_reliability_snapshots trs
+     LEFT JOIN test_cases tc ON tc.id = trs.test_case_id
+     WHERE trs.external_test_id = $1${ownershipFilter}`,
+    params,
   );
   return rows[0] ?? null;
 }
