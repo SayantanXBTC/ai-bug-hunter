@@ -9,6 +9,7 @@
     "types": ["node"]
   },
   "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.spec.ts"],
   "references": [
     { "path": "../../packages/shared" },
     { "path": "../../packages/test-engine" }
