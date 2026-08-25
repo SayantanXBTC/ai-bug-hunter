@@ -1,5 +1,5 @@
 # Base image ships Chromium + all OS libs Playwright needs.
-FROM mcr.microsoft.com/playwright:v1.49.1-noble
+FROM mcr.microsoft.com/playwright:v1.62.1-noble
 
 WORKDIR /app
 
