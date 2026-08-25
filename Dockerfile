@@ -7,10 +7,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-COPY apps/ci-cli/package.json apps/ci-cli/
-COPY apps/demo-app/package.json apps/demo-app/
 COPY packages/shared/package.json packages/shared/
 COPY packages/test-engine/package.json packages/test-engine/
+COPY tests/demo-app/package.json tests/demo-app/
 
 # Install everything (need devDeps for tsc build).
 RUN npm install --include=dev

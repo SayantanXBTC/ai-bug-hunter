@@ -16,4 +16,5 @@ apps/api/**/*.test.ts
 apps/web/**/*.test.tsx
 apps/web/dist
 packages/**/*.test.ts
-tests
+tests/*
+!tests/demo-app/package.json
