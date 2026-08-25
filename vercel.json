@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://ai-bug-hunter-tm81.onrender.com/api/:path*"
+      "destination": "https://ai-bug-hunter-j94g.onrender.com/api/:path*"
     }
   ]
 }
