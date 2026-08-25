@@ -430,6 +430,20 @@ export function GenerateTestsModal({
             </div>
           )}
 
+          {response && response.status === 'validation_error' && (
+            <div
+              role="alert"
+              className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+            >
+              <div className="font-medium">Generation blocked</div>
+              {response.message && <div className="mt-1">{response.message}</div>}
+              <div className="mt-2 text-[11px] text-amber-700/80">
+                Tip: pick a specific target page above, or reduce Max Tests, so the
+                prompt fits under the size limit.
+              </div>
+            </div>
+          )}
+
           {response && response.status === 'success' && (
             <div className="space-y-3">
               <div className="rounded-md border border-[var(--border)] bg-[var(--surface-hover)] px-3 py-2 text-xs text-[var(--text-muted)]">

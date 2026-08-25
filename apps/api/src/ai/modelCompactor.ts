@@ -25,11 +25,16 @@ export function compactApplicationModel(
   targetPage?: string,
 ): LLMApplicationContext {
   let pages = model.pages;
+  let effectiveMaxPages = limits.maxPages;
   if (targetPage) {
     pages = pages.filter((p) => p.path === targetPage || p.url === targetPage);
     if (pages.length === 0) pages = model.pages.slice(0, 1);
+  } else {
+    // No specific page → cap at 3 pages so the prompt stays under the
+    // AI_PROMPT_MAX_CHARS budget for typical discovered surfaces.
+    effectiveMaxPages = Math.min(3, limits.maxPages);
   }
-  pages = pages.slice(0, limits.maxPages);
+  pages = pages.slice(0, effectiveMaxPages);
 
   return {
     baseUrl: model.baseUrl,
