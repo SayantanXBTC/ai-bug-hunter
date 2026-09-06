@@ -11,3 +11,6 @@ coverage/
 .idea/
 *.tsbuildinfo
 /artifacts/
+.claude/
+docs/
+tests/demo-app/README.md
