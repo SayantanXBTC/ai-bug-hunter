@@ -41,139 +41,6 @@ function useTypewriter(text: string, speed = 38, startDelay = 600) {
   return { displayed, done };
 }
 
-function CopyIcon(): JSX.Element {
-  return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <rect x="1.5" y="3.5" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1" />
-      <rect x="4.5" y="1.5" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1" />
-    </svg>
-  );
-}
-
-function Navbar({
-  isAuthenticated,
-  onCta,
-}: {
-  isAuthenticated: boolean;
-  onCta: () => void;
-}): JSX.Element {
-  const [open, setOpen] = useState(false);
-  const links = ['Overview', 'How it works', 'Docs', 'Changelog'];
-  const ctaLabel = isAuthenticated ? CTA_LABEL_AUTH : CTA_LABEL_GUEST;
-
-  return (
-    <>
-      <nav className="fixed left-0 right-0 top-0 z-10 flex items-center justify-between px-5 py-4 sm:px-8 sm:py-5">
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <span
-            className="text-[21px] tracking-tight text-white sm:text-[26px]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            AI Bug Hunter<sup>®</sup>
-          </span>
-          <span
-            aria-hidden="true"
-            className="select-none text-[25px] text-[#c4b5fd] sm:text-[30px]"
-            style={{ letterSpacing: '-0.02em' }}
-          >
-            ✳︎
-          </span>
-        </div>
-
-        {/* Desktop nav */}
-        <div className="hidden items-center gap-0 text-[23px] text-white md:flex">
-          {links.map((l, i) => (
-            <span key={l} className="flex items-center">
-              <a href="#" className="transition-opacity hover:opacity-60">
-                {l}
-              </a>
-              {i < links.length - 1 && <span className="mx-1">,&nbsp;</span>}
-            </span>
-          ))}
-        </div>
-
-        {/* Desktop CTA */}
-        <div className="hidden items-center gap-6 md:flex">
-          <button
-            onClick={onCta}
-            className="rounded-full border border-white/30 bg-[#8B5CF6] px-5 py-2 text-[16px] text-white shadow-[0_0_24px_rgba(139,92,246,0.35)] transition-all hover:bg-[#7c3aed] hover:shadow-[0_0_32px_rgba(139,92,246,0.55)]"
-          >
-            {ctaLabel}
-          </button>
-          <a
-            href="mailto:hello@aibughunter.dev"
-            className="text-[23px] text-white underline underline-offset-2 transition-opacity hover:opacity-60"
-          >
-            Contact
-          </a>
-        </div>
-
-        {/* Mobile hamburger */}
-        <button
-          aria-label="Toggle menu"
-          className="flex flex-col items-center justify-center gap-[5px] md:hidden"
-          onClick={() => setOpen((v) => !v)}
-        >
-          <span
-            className="block h-[2px] w-6 bg-white transition-transform duration-300"
-            style={{
-              transform: open ? 'translateY(7px) rotate(45deg)' : 'none',
-            }}
-          />
-          <span
-            className="block h-[2px] w-6 bg-white transition-opacity duration-300"
-            style={{ opacity: open ? 0 : 1 }}
-          />
-          <span
-            className="block h-[2px] w-6 bg-white transition-transform duration-300"
-            style={{
-              transform: open ? 'translateY(-7px) rotate(-45deg)' : 'none',
-            }}
-          />
-        </button>
-      </nav>
-
-      {/* Mobile overlay */}
-      <div
-        className="fixed inset-0 z-[9] flex flex-col justify-center gap-8 bg-[#04040a]/95 px-8 backdrop-blur-sm transition-opacity duration-300 md:hidden"
-        style={{
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-        }}
-      >
-        {links.map((l) => (
-          <a key={l} href="#" className="text-[32px] font-medium text-white">
-            {l}
-          </a>
-        ))}
-        <button
-          onClick={() => {
-            setOpen(false);
-            onCta();
-          }}
-          className="w-fit rounded-full bg-[#8B5CF6] px-6 py-3 text-[24px] text-white"
-        >
-          {ctaLabel}
-        </button>
-        <a
-          href="mailto:hello@aibughunter.dev"
-          className="text-[32px] font-medium text-white underline underline-offset-2"
-        >
-          Contact
-        </a>
-      </div>
-    </>
-  );
-}
-
 function BackgroundVideo(): JSX.Element {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const prevXRef = useRef<number | null>(null);
@@ -259,6 +126,65 @@ function BackgroundVideo(): JSX.Element {
   );
 }
 
+function ShinyCta({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}): JSX.Element {
+  return (
+    <button
+      onClick={onClick}
+      className="group relative mt-2 inline-flex items-center gap-3 overflow-hidden rounded-full px-8 py-4 text-[15px] font-medium text-white transition-transform duration-300 hover:-translate-y-0.5 active:translate-y-0 sm:px-10 sm:text-[16px]"
+      style={{
+        background:
+          'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 45%, #7c3aed 100%)',
+        boxShadow:
+          '0 0 0 1px rgba(255,255,255,0.18) inset, 0 10px 30px -8px rgba(124,58,237,0.55), 0 0 60px -12px rgba(167,139,250,0.55)',
+      }}
+    >
+      {/* Sheen sweep */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-[900ms] ease-out group-hover:translate-x-full"
+      />
+      {/* Inner top-light bevel */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-2 top-0 h-1/2 rounded-t-full opacity-70"
+        style={{
+          background:
+            'linear-gradient(to bottom, rgba(255,255,255,0.35), transparent)',
+        }}
+      />
+      {/* Outer ambient ring */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-px rounded-full opacity-70 blur-[1px]"
+        style={{
+          background:
+            'linear-gradient(135deg, rgba(196,181,253,0.55), rgba(124,58,237,0) 45%, rgba(167,139,250,0.45))',
+        }}
+      />
+
+      <span className="relative tracking-wide">{label}</span>
+      <svg
+        className="relative h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M5 12h14M13 5l7 7-7 7" />
+      </svg>
+    </button>
+  );
+}
+
 function Hero({
   isAuthenticated,
   onCta,
@@ -269,56 +195,49 @@ function Hero({
   const { displayed, done } = useTypewriter(
     "Point me at your app. I'll find the bugs before your users do.",
   );
-  const [pillsVisible, setPillsVisible] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [visible, setVisible] = useState(false);
   const ctaLabel = isAuthenticated ? CTA_LABEL_AUTH : CTA_LABEL_GUEST;
 
   useEffect(() => {
-    const t = setTimeout(() => setPillsVisible(true), 400);
+    const t = setTimeout(() => setVisible(true), 200);
     return () => clearTimeout(t);
   }, []);
 
-  async function copyEmail(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText('hello@aibughunter.dev');
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // ignore
-    }
-  }
-
-  const pills = [
-    'How it works',
-    'Watch a live run',
-    'Read the docs',
-    'What we test',
-  ];
-
   return (
-    <section className="relative z-[1] flex h-screen flex-col justify-end overflow-hidden px-5 pb-12 sm:px-8 md:justify-center md:px-10 md:pb-0">
-      <div className="relative z-10 max-w-xl">
-        {/* Blurred intro label */}
-        <div
-          className="pointer-events-none mb-5 select-none sm:mb-6"
+    <section className="relative z-[1] flex h-screen items-center overflow-hidden px-6 sm:px-10 md:px-16">
+      <div
+        className="relative z-10 max-w-2xl"
+        style={{
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'translateY(0)' : 'translateY(12px)',
+          transition: 'opacity 0.6s ease, transform 0.6s ease',
+        }}
+      >
+        {/* Wordmark */}
+        <h1
+          className="mb-6 flex items-center gap-4 text-[42px] leading-none tracking-tight text-white sm:text-[56px] md:text-[68px]"
           style={{
-            fontSize: 'clamp(18px, 4vw, 26px)',
-            lineHeight: 1.3,
-            fontWeight: 400,
-            color: '#ffffff',
-            filter: 'blur(4px)',
+            fontFamily: 'var(--font-heading)',
+            textShadow: '0 4px 30px rgba(124,58,237,0.35)',
           }}
         >
-          Meet A.R.I.A.,
-          <br />
-          Autonomous Regression &amp; Investigation Agent
-        </div>
+          <span>
+            AI Bug Hunter<sup className="text-[0.35em] font-normal">®</sup>
+          </span>
+          <span
+            aria-hidden="true"
+            className="select-none text-[0.7em] text-[#c4b5fd]"
+            style={{ letterSpacing: '-0.02em' }}
+          >
+            ✳︎
+          </span>
+        </h1>
 
-        {/* Typewriter */}
+        {/* Tagline (typewriter) */}
         <p
-          className="mb-5 text-white sm:mb-6"
+          className="mb-10 max-w-xl text-white/95"
           style={{
-            fontSize: 'clamp(18px, 4vw, 26px)',
+            fontSize: 'clamp(18px, 2.4vw, 26px)',
             lineHeight: 1.35,
             fontWeight: 400,
             minHeight: 54,
@@ -333,42 +252,8 @@ function Hero({
           )}
         </p>
 
-        {/* Action pills */}
-        <div
-          className="flex flex-wrap gap-y-1"
-          style={{
-            opacity: pillsVisible ? 1 : 0,
-            transform: pillsVisible ? 'translateY(0)' : 'translateY(8px)',
-            transition: 'opacity 0.4s ease, transform 0.4s ease',
-          }}
-        >
-          {/* Primary CTA — auth-aware */}
-          <button
-            onClick={onCta}
-            className="mx-[0.2em] mb-[0.4em] inline-flex items-center justify-center whitespace-nowrap rounded-full border border-white/20 bg-[#8B5CF6] px-4 py-[0.3em] text-[13px] text-white shadow-[0_0_18px_rgba(139,92,246,0.45)] transition-colors duration-200 hover:bg-[#7c3aed] sm:px-5 sm:text-[15px]"
-          >
-            {ctaLabel} →
-          </button>
-
-          {pills.map((label) => (
-            <button
-              key={label}
-              className="mx-[0.2em] mb-[0.4em] inline-flex items-center justify-center whitespace-nowrap rounded-full border border-white/10 bg-white px-4 py-[0.3em] text-[13px] text-[#0d0a20] transition-colors duration-200 hover:bg-[#8B5CF6] hover:text-white sm:px-5 sm:text-[15px]"
-            >
-              {label}
-            </button>
-          ))}
-
-          <button
-            onClick={copyEmail}
-            className="mx-[0.2em] mb-[0.4em] inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white bg-transparent px-4 py-[0.3em] text-[13px] text-white transition-colors duration-200 hover:bg-white hover:text-[#0d0a20] sm:gap-3 sm:px-5 sm:text-[15px]"
-          >
-            Reach us:{' '}
-            <span className="underline underline-offset-1">hello@aibughunter.dev</span>
-            <CopyIcon />
-            {copied && <span className="ml-1 text-[11px] opacity-80">copied</span>}
-          </button>
-        </div>
+        {/* Single premium CTA */}
+        <ShinyCta label={ctaLabel} onClick={onCta} />
       </div>
     </section>
   );
@@ -378,7 +263,6 @@ export function LandingPage({ isAuthenticated, onCta }: Props): JSX.Element {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#04040a] text-white">
       <BackgroundVideo />
-      <Navbar isAuthenticated={isAuthenticated} onCta={onCta} />
       <Hero isAuthenticated={isAuthenticated} onCta={onCta} />
     </div>
   );
