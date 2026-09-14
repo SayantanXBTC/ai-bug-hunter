@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar, type ViewId } from './components/Sidebar.js';
 import { TestRunList } from './components/TestRunList.js';
 import { TestRunDetail } from './components/TestRunDetail.js';
@@ -23,15 +23,46 @@ export function App(): JSX.Element {
   const [view, setView] = useState<ViewId>('dashboard');
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [entered, setEntered] = useState(false);
+
+  // Reset gate on logout so the user returns to the landing page.
+  useEffect(() => {
+    if (!auth.user) {
+      setEntered(false);
+      setShowLogin(false);
+    }
+  }, [auth.user]);
 
   if (auth.loading) {
     return <div className="flex min-h-screen items-center justify-center bg-[var(--bg)] text-[var(--text-muted)]">Loading…</div>;
   }
-  if (!auth.user) {
-    if (!showLogin) {
-      return <LandingPage onSignInClick={() => setShowLogin(true)} />;
+
+  if (!entered) {
+    if (showLogin && !auth.user) {
+      return (
+        <LoginView
+          onAuthenticated={() => {
+            void auth.refresh();
+            setShowLogin(false);
+            setEntered(true);
+          }}
+        />
+      );
     }
-    return <LoginView onAuthenticated={() => void auth.refresh()} />;
+    return (
+      <LandingPage
+        isAuthenticated={!!auth.user}
+        onCta={() => {
+          if (auth.user) setEntered(true);
+          else setShowLogin(true);
+        }}
+      />
+    );
+  }
+
+  if (!auth.user) {
+    // Effect above will reset `entered`; render placeholder during transition.
+    return <div className="min-h-screen bg-[var(--bg)]" />;
   }
 
   const role = auth.user.role;
