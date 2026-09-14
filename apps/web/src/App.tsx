@@ -10,6 +10,7 @@ import { RegressionCampaigns } from './components/RegressionCampaigns.js';
 import { Dashboard } from './components/Dashboard.js';
 import { SettingsView } from './components/SettingsView.js';
 import { LoginView } from './components/LoginView.js';
+import { LandingPage } from './components/LandingPage.js';
 import { PageShell } from './components/shared/PageShell.js';
 import { TopBar } from './components/shared/TopBar.js';
 import { useAuth } from './hooks/useAuth.js';
@@ -21,11 +22,15 @@ export function App(): JSX.Element {
   useTheme();
   const [view, setView] = useState<ViewId>('dashboard');
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
 
   if (auth.loading) {
     return <div className="flex min-h-screen items-center justify-center bg-[var(--bg)] text-[var(--text-muted)]">Loading…</div>;
   }
   if (!auth.user) {
+    if (!showLogin) {
+      return <LandingPage onSignInClick={() => setShowLogin(true)} />;
+    }
     return <LoginView onAuthenticated={() => void auth.refresh()} />;
   }
 
