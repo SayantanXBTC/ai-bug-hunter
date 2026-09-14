@@ -112,14 +112,14 @@ function BackgroundVideo(): JSX.Element {
           objectPosition: '70% center',
         }}
       />
-      {/* Purple tint overlay to unify theme with sign-in */}
+      {/* Purple tint overlay — heavier on the left so hero copy stays crisp */}
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0"
         style={{
           zIndex: 0,
           background:
-            'linear-gradient(180deg, rgba(13,10,32,0.55) 0%, rgba(4,4,10,0.25) 45%, rgba(4,4,10,0.75) 100%), radial-gradient(ellipse at 30% 40%, rgba(124,58,237,0.28) 0%, transparent 60%)',
+            'linear-gradient(90deg, rgba(4,4,10,0.85) 0%, rgba(13,10,32,0.7) 25%, rgba(13,10,32,0.35) 55%, rgba(4,4,10,0.2) 100%), linear-gradient(180deg, rgba(13,10,32,0.45) 0%, rgba(4,4,10,0.2) 45%, rgba(4,4,10,0.7) 100%), radial-gradient(ellipse at 20% 45%, rgba(124,58,237,0.35) 0%, transparent 55%)',
         }}
       />
     </>
