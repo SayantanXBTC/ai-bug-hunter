@@ -11,7 +11,11 @@ import {
   updateLastLogin,
   type UserRole,
 } from '../db/repositories/userRepo.js';
-import { isFirebaseAuthEnabled, verifyFirebaseIdToken } from '../security/firebaseAuth.js';
+import {
+  FirebaseVerifyError,
+  isFirebaseAuthEnabled,
+  verifyFirebaseIdToken,
+} from '../security/firebaseAuth.js';
 import {
   hashPassword,
   validatePasswordStrength,
@@ -187,8 +191,21 @@ authRouter.post(
       await updateLastLogin(pool, user.id);
       res.json({ user: { id: user.id, email: user.email, role: user.role } });
     } catch (err) {
+      if (err instanceof FirebaseVerifyError) {
+        // Server-side setup problem, not the user's fault. Log the detail,
+        // return a readable message (5xx messages are masked in production).
+        console.error('[auth:google]', err.kind, err.message);
+        return res.status(err.kind === 'timeout' ? 504 : 503).json({
+          error: {
+            code: err.kind === 'timeout' ? 'google_verify_timeout' : 'google_auth_misconfigured',
+            message: 'Google sign-in is temporarily unavailable. Please sign in with email and password.',
+            ...(req.requestId ? { requestId: req.requestId } : {}),
+          },
+        });
+      }
       const code = (err as { code?: string }).code;
-      if (code === 'auth/id-token-expired' || code === 'auth/argument-error') {
+      if (typeof code === 'string' && code.startsWith('auth/')) {
+        // Expired, revoked, malformed or wrong-project tokens.
         return next(new HttpError(401, 'Invalid ID token', 'invalid_id_token'));
       }
       next(err);
