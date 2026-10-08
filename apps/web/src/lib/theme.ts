@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 export type ThemeMode = 'dark' | 'light';
 
@@ -27,27 +27,41 @@ function applyTheme(theme: ThemeMode): void {
   document.documentElement.setAttribute('data-theme', theme);
 }
 
+// Module-level store so every useTheme() caller (top bar toggle, settings,
+// command palette) sees the same value and re-renders together.
+let current: ThemeMode = readInitial();
+const listeners = new Set<() => void>();
+
+function setCurrent(next: ThemeMode): void {
+  if (next === current) return;
+  current = next;
+  applyTheme(next);
+  try {
+    window.localStorage.setItem(STORAGE_KEY, next);
+  } catch {
+    // ignore
+  }
+  listeners.forEach((l) => l());
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
 export function useTheme(): {
   theme: ThemeMode;
   setTheme: (t: ThemeMode) => void;
   toggle: () => void;
 } {
-  const [theme, setThemeState] = useState<ThemeMode>(() => readInitial());
+  const theme = useSyncExternalStore(subscribe, () => current, () => current);
 
   useEffect(() => {
     applyTheme(theme);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, theme);
-    } catch {
-      // ignore
-    }
   }, [theme]);
 
-  const setTheme = useCallback((t: ThemeMode) => setThemeState(t), []);
-  const toggle = useCallback(
-    () => setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark')),
-    [],
-  );
+  const setTheme = useCallback((t: ThemeMode) => setCurrent(t), []);
+  const toggle = useCallback(() => setCurrent(current === 'dark' ? 'light' : 'dark'), []);
 
   return { theme, setTheme, toggle };
 }

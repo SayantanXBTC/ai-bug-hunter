@@ -49,7 +49,7 @@ export function ThemeToggle(): JSX.Element {
       onClick={toggle}
       aria-label={`Switch to ${opposite} mode`}
       title={`Switch to ${opposite} mode`}
-      className="relative inline-flex h-8 w-[62px] items-center rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] px-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+      className="relative inline-flex h-9 w-[66px] items-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-1 transition-colors hover:border-[var(--border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
     >
       <span
         aria-hidden
@@ -65,8 +65,12 @@ export function ThemeToggle(): JSX.Element {
       </span>
       <span
         aria-hidden
-        className="relative z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)] shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform"
-        style={{ transform: isDark ? 'translateX(30px)' : 'translateX(0px)' }}
+        className="relative z-10 inline-flex h-7 w-7 items-center justify-center rounded-lg text-white shadow-[0_4px_12px_-4px_var(--primary)] transition-transform duration-500"
+        style={{
+          transform: isDark ? 'translateX(29px) rotate(360deg)' : 'translateX(0px) rotate(0deg)',
+          transitionTimingFunction: 'var(--ease-spring)',
+          background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+        }}
       >
         {isDark ? <MoonIcon /> : <SunIcon />}
       </span>

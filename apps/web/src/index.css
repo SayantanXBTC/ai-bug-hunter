@@ -5,10 +5,17 @@
 :root {
   --font-heading: 'HelveticaNowDisplay-Medium', 'Helvetica Neue', Arial, sans-serif;
   --font-body: 'HelveticaNowDisplayW01-Rg', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 body {
   font-family: var(--font-body);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
 }
 
 @keyframes blink {
@@ -33,53 +40,69 @@ body,
 
 :root,
 [data-theme='dark'] {
-  --bg: #05060B;
-  --surface: #0B0D15;
-  --surface-elevated: #10121C;
-  --surface-glass: rgba(12, 14, 22, 0.65);
-  --surface-hover: rgba(255, 255, 255, 0.03);
-  --border: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(139, 92, 246, 0.2);
-  --text: #E5E7EB;
-  --text-muted: #94A3B8;
-  --text-subtle: #64748B;
-  --primary: #8B5CF6;
+  color-scheme: dark;
+  --bg: #05060b;
+  --surface: #0b0d15;
+  --surface-elevated: #10121c;
+  --surface-glass: rgba(14, 16, 26, 0.62);
+  --surface-hover: rgba(255, 255, 255, 0.035);
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(139, 92, 246, 0.28);
+  --text: #e8e9f0;
+  --text-muted: #9aa3b8;
+  --text-subtle: #687389;
+  --primary: #8b5cf6;
+  --primary-strong: #a78bfa;
   --primary-soft: rgba(139, 92, 246, 0.15);
-  --secondary: #22D3EE;
-  --success: #10B981;
-  --warning: #F59E0B;
-  --danger: #EF4444;
-  --shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.4);
+  --secondary: #22d3ee;
+  --secondary-soft: rgba(34, 211, 238, 0.12);
+  --success: #10b981;
+  --success-soft: rgba(16, 185, 129, 0.12);
+  --warning: #f59e0b;
+  --warning-soft: rgba(245, 158, 11, 0.12);
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.12);
+  --shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 18px 50px -16px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(139, 92, 246, 0.18);
+  --spotlight: rgba(139, 92, 246, 0.14);
   --ambient-bg:
-    radial-gradient(1200px 600px at 20% -10%, rgba(139, 92, 246, 0.10), transparent 70%),
-    radial-gradient(900px 500px at 90% 10%, rgba(56, 189, 248, 0.06), transparent 70%),
-    #05060B;
+    radial-gradient(1200px 600px at 20% -10%, rgba(139, 92, 246, 0.12), transparent 70%),
+    radial-gradient(900px 500px at 90% 10%, rgba(56, 189, 248, 0.07), transparent 70%),
+    #05060b;
   --grid-stroke: #8b5cf6;
   --grid-opacity: 0.05;
 }
 
 [data-theme='light'] {
-  --bg: #F5F7FA;
-  --surface: #FFFFFF;
-  --surface-elevated: #FFFFFF;
-  --surface-glass: rgba(255, 255, 255, 0.85);
-  --surface-hover: #F1F5F9;
-  --border: #E2E8F0;
-  --border-strong: #C7D2FE;
-  --text: #111827;
-  --text-muted: #64748B;
-  --text-subtle: #94A3B8;
-  --primary: #6D28D9;
-  --primary-soft: rgba(109, 40, 217, 0.10);
-  --secondary: #0891B2;
+  color-scheme: light;
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-glass: rgba(255, 255, 255, 0.82);
+  --surface-hover: #f1f3f8;
+  --border: #e3e6ef;
+  --border-strong: #c9c2f5;
+  --text: #111322;
+  --text-muted: #5d6579;
+  --text-subtle: #8e96a8;
+  --primary: #6d28d9;
+  --primary-strong: #7c3aed;
+  --primary-soft: rgba(109, 40, 217, 0.09);
+  --secondary: #0891b2;
+  --secondary-soft: rgba(8, 145, 178, 0.1);
   --success: #059669;
-  --warning: #D97706;
-  --danger: #DC2626;
-  --shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08);
+  --success-soft: rgba(5, 150, 105, 0.1);
+  --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.1);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.08);
+  --shadow: 0 4px 20px -6px rgba(17, 19, 34, 0.08);
+  --shadow-lift: 0 18px 40px -18px rgba(76, 29, 149, 0.25), 0 0 0 1px rgba(109, 40, 217, 0.15);
+  --spotlight: rgba(109, 40, 217, 0.07);
   --ambient-bg:
     radial-gradient(1200px 600px at 20% -10%, rgba(109, 40, 217, 0.08), transparent 70%),
     radial-gradient(900px 500px at 90% 10%, rgba(56, 189, 248, 0.06), transparent 70%),
-    #F5F7FA;
+    #f5f6fa;
   --grid-stroke: #6d28d9;
   --grid-opacity: 0.04;
 }
@@ -87,4 +110,488 @@ body,
 body {
   background: var(--bg);
   color: var(--text);
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+}
+
+/* ---------- Scrollbars ---------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 92, 246, 0.25) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.22);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- Keyframes ---------- */
+@keyframes abhFadeUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+@keyframes abhFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes abhScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes abhShimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+@keyframes abhSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes abhPulseRing {
+  0% {
+    box-shadow: 0 0 0 0 var(--ring-color, rgba(139, 92, 246, 0.45));
+  }
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@keyframes abhFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes abhGradientPan {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+@keyframes abhDash {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes abhGrowX {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes abhGrowY {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes abhTravel {
+  0% {
+    left: 0%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+@keyframes abhScan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* ---------- Motion utilities ----------
+   Fill mode is `backwards`, not `both`: a transform left on an ancestor after
+   the animation would become the containing block for `position: fixed`
+   modals rendered inside it. */
+.abh-fade-up {
+  animation: abhFadeUp 0.55s var(--ease-out) backwards;
+}
+.abh-fade-in {
+  animation: abhFadeIn 0.4s ease both;
+}
+.abh-scale-in {
+  animation: abhScaleIn 0.35s var(--ease-out) backwards;
+}
+.abh-float {
+  animation: abhFloat 4s ease-in-out infinite;
+}
+.abh-spin-slow {
+  animation: abhSpin 14s linear infinite;
+}
+.abh-pulse-ring {
+  animation: abhPulseRing 2s ease-out infinite;
+}
+.abh-grow-x {
+  transform-origin: left center;
+  animation: abhGrowX 0.9s var(--ease-out) both;
+}
+.abh-grow-y {
+  transform-origin: bottom center;
+  animation: abhGrowY 0.7s var(--ease-out) both;
+}
+.abh-stagger > * {
+  animation: abhFadeUp 0.5s var(--ease-out) backwards;
+}
+.abh-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.abh-stagger > *:nth-child(2) { animation-delay: 45ms; }
+.abh-stagger > *:nth-child(3) { animation-delay: 90ms; }
+.abh-stagger > *:nth-child(4) { animation-delay: 135ms; }
+.abh-stagger > *:nth-child(5) { animation-delay: 180ms; }
+.abh-stagger > *:nth-child(6) { animation-delay: 225ms; }
+.abh-stagger > *:nth-child(7) { animation-delay: 270ms; }
+.abh-stagger > *:nth-child(8) { animation-delay: 315ms; }
+.abh-stagger > *:nth-child(n + 9) { animation-delay: 360ms; }
+
+@layer components {
+/* ---------- Surfaces ---------- */
+.abh-card {
+  position: relative;
+  border: 1px solid var(--border);
+  background: var(--surface-glass);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+/* Card whose background lights up under the cursor (needs useSpotlight / onMouseMove). */
+.abh-spot {
+  --mx: 50%;
+  --my: 50%;
+  overflow: hidden;
+}
+.abh-spot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(420px circle at var(--mx) var(--my), var(--spotlight), transparent 45%);
+  border-radius: inherit;
+}
+.abh-spot:hover::before {
+  opacity: 1;
+}
+.abh-lift {
+  transition:
+    transform 0.35s var(--ease-out),
+    box-shadow 0.35s var(--ease-out),
+    border-color 0.25s ease;
+}
+.abh-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--border-strong);
+}
+/* Animated gradient hairline border. */
+.abh-glow-border {
+  position: relative;
+}
+.abh-glow-border::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
+  background-size: 200% 100%;
+  animation: abhGradientPan 6s linear infinite;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.abh-gradient-text {
+  background: linear-gradient(100deg, var(--text) 0%, var(--text) 40%, var(--primary-strong) 75%, var(--secondary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.abh-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-hover) 0%,
+    rgba(139, 92, 246, 0.1) 50%,
+    var(--surface-hover) 100%
+  );
+  background-size: 200% 100%;
+  animation: abhShimmer 1.6s linear infinite;
+}
+
+/* ---------- Buttons ---------- */
+.abh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 10px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition:
+    transform 0.2s var(--ease-out),
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.25s ease,
+    opacity 0.2s ease;
+}
+.abh-btn:focus {
+  outline: none;
+}
+.abh-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--primary);
+}
+.abh-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.abh-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.abh-btn-sm {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  border-radius: 8px;
+}
+.abh-btn-primary {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 45%, #7c3aed 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.14) inset,
+    0 8px 22px -10px rgba(124, 58, 237, 0.75);
+}
+.abh-btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%);
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.35) 50%, transparent 80%);
+  transition: transform 0.8s var(--ease-out);
+  pointer-events: none;
+}
+.abh-btn-primary:hover:not(:disabled) {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+    0 12px 28px -10px rgba(124, 58, 237, 0.9),
+    0 0 30px -10px rgba(167, 139, 250, 0.8);
+  transform: translateY(-1px);
+}
+.abh-btn-primary:hover:not(:disabled)::after {
+  transform: translateX(120%);
+}
+.abh-btn-ghost {
+  color: var(--text-muted);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+}
+.abh-btn-ghost:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--primary-soft);
+}
+.abh-btn-success {
+  color: #fff;
+  background: linear-gradient(135deg, #34d399, #059669);
+  box-shadow: 0 8px 22px -10px rgba(5, 150, 105, 0.8);
+}
+.abh-btn-success:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px -10px rgba(5, 150, 105, 0.9);
+}
+
+/* ---------- Inputs ---------- */
+.abh-input {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--text);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.abh-input::placeholder {
+  color: var(--text-subtle);
+}
+.abh-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+select.abh-input {
+  appearance: none;
+  padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b93a7' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+}
+
+/* ---------- Segmented chips ---------- */
+.abh-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+.abh-chip:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.abh-chip[aria-pressed='true'] {
+  color: var(--text);
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: 0 0 18px -6px var(--primary);
+}
+.abh-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface-hover);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+}
+
+/* ---------- Dialogs: shared entrance animation ----------
+   Modal overlays are rendered inside `space-y-*` stacks, which would give
+   them a top margin and leave an undimmed strip above the backdrop. */
+.fixed.inset-0 {
+  margin: 0 !important;
+}
+.fixed.inset-0.z-50 {
+  animation: abhFadeIn 0.2s ease both;
+}
+.fixed.inset-0.z-50 > div {
+  animation: abhScaleIn 0.3s var(--ease-out) backwards;
+}
+
+/* ---------- Dark-theme repair for light-only Tailwind tints ----------
+   Several detail views and modals use Tailwind's light palette (bg-red-50,
+   border-emerald-200, text-violet-700 ...). In dark mode those render as
+   bright blocks. Remap them to translucent tints so every view stays on-theme. */
+[data-theme='dark'] .bg-red-50,
+[data-theme='dark'] .hover\:bg-red-50:hover { background-color: rgba(239, 68, 68, 0.1); }
+[data-theme='dark'] .hover\:bg-red-100:hover { background-color: rgba(239, 68, 68, 0.16); }
+[data-theme='dark'] .bg-amber-50 { background-color: rgba(245, 158, 11, 0.1); }
+[data-theme='dark'] .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.1); }
+[data-theme='dark'] .bg-blue-50 { background-color: rgba(59, 130, 246, 0.1); }
+[data-theme='dark'] .bg-violet-50 { background-color: rgba(139, 92, 246, 0.12); }
+[data-theme='dark'] .bg-neutral-50,
+[data-theme='dark'] .bg-neutral-100 { background-color: rgba(255, 255, 255, 0.04); }
+[data-theme='dark'] .border-red-200,
+[data-theme='dark'] .border-red-300 { border-color: rgba(239, 68, 68, 0.3); }
+[data-theme='dark'] .border-amber-200,
+[data-theme='dark'] .border-amber-300 { border-color: rgba(245, 158, 11, 0.3); }
+[data-theme='dark'] .border-emerald-200 { border-color: rgba(16, 185, 129, 0.3); }
+[data-theme='dark'] .border-blue-200 { border-color: rgba(59, 130, 246, 0.3); }
+[data-theme='dark'] .border-violet-100,
+[data-theme='dark'] .border-violet-200 { border-color: rgba(139, 92, 246, 0.3); }
+[data-theme='dark'] .border-neutral-200 { border-color: rgba(255, 255, 255, 0.1); }
+[data-theme='dark'] .text-red-600,
+[data-theme='dark'] .text-red-700,
+[data-theme='dark'] .text-red-800 { color: #fca5a5; }
+[data-theme='dark'] .text-amber-700,
+[data-theme='dark'] .text-amber-800 { color: #fcd34d; }
+[data-theme='dark'] .text-emerald-700 { color: #6ee7b7; }
+[data-theme='dark'] .text-blue-700 { color: #93c5fd; }
+[data-theme='dark'] .text-violet-600,
+[data-theme='dark'] .text-violet-700,
+[data-theme='dark'] .text-violet-800,
+[data-theme='dark'] .text-violet-900 { color: #c4b5fd; }
+[data-theme='dark'] .text-neutral-600 { color: var(--text-muted); }
+
+/* Light-theme repair for dark-only tints used by a few views. */
+[data-theme='light'] .text-violet-200,
+[data-theme='light'] .text-violet-300 { color: #6d28d9; }
+[data-theme='light'] .text-red-300,
+[data-theme='light'] .text-red-200 { color: #b91c1c; }
+[data-theme='light'] .text-emerald-300 { color: #047857; }
+[data-theme='light'] .text-orange-300,
+[data-theme='light'] .text-amber-300,
+[data-theme='light'] .text-amber-200 { color: #b45309; }
+[data-theme='light'] .text-cyan-300 { color: #0e7490; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

@@ -47,48 +47,54 @@ export function RecentFailures({ onOpenRuns, canWrite }: RecentFailuresProps): J
   }, []);
 
   return (
-    <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
-      <div className="mb-3 flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">Recent Failures</h2>
-          <p className="text-xs text-[var(--text-muted)]">Latest failed and errored runs.</p>
+    <section className="abh-card flex flex-col p-5 sm:p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--danger-soft)] text-[var(--danger)]">
+            <IconX size={16} />
+          </span>
+          <div>
+            <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">Recent Failures</h2>
+            <p className="text-xs text-[var(--text-muted)]">Latest failed and errored runs. Click one to inspect it.</p>
+          </div>
         </div>
       </div>
       {error && <div className="text-sm text-red-600">Failed to load: {error}</div>}
       {!error && items === null && (
         <div className="space-y-2">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
         </div>
       )}
       {!error && items && items.length === 0 && (
-        <div className="rounded border border-dashed border-[var(--border)] bg-[var(--surface-hover)] px-4 py-6 text-center">
-          <p className="text-sm text-[var(--text-muted)]">No recent failures. Run tests to see results here.</p>
+        <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--border)] px-4 py-8 text-center">
+          <span className="abh-float flex h-12 w-12 items-center justify-center rounded-full bg-[var(--success-soft)] text-2xl text-[var(--success)]">
+            ✓
+          </span>
+          <p className="mt-3 text-sm font-medium text-[var(--text)]">No recent failures</p>
+          <p className="mt-1 text-xs text-[var(--text-muted)]">Failed runs show up here the moment they happen.</p>
           {canWrite && (
-            <button
-              type="button"
-              onClick={onOpenRuns}
-              className="mt-3 inline-flex items-center gap-1.5 rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--text)] hover:bg-[var(--surface-hover)]"
-            >
+            <button type="button" onClick={onOpenRuns} className="abh-btn abh-btn-ghost abh-btn-sm mt-4">
               Run Tests
             </button>
           )}
         </div>
       )}
       {!error && items && items.length > 0 && (
-        <ul className="divide-y divide-[var(--border)]">
+        <ul className="abh-stagger space-y-1.5">
           {items.map((r) => (
             <li key={r.id}>
               <button
                 type="button"
                 onClick={onOpenRuns}
-                className="group flex w-full items-center gap-3 py-2.5 text-left hover:bg-[var(--surface-hover)] focus:bg-[var(--surface-hover)] focus:outline-none"
+                className="group flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-left transition-all hover:border-[var(--border)] hover:bg-[var(--surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
               >
                 <span
                   aria-label={r.status}
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-700"
+                  className="relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--danger-soft)] text-[var(--danger)]"
                 >
+                  <span className="absolute inset-0 animate-ping rounded-full bg-[var(--danger)] opacity-10" />
                   <IconX size={14} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -97,10 +103,10 @@ export function RecentFailures({ onOpenRuns, canWrite }: RecentFailuresProps): J
                     {formatRelativeTime(r.startedAt)} · {formatDuration(r.durationMs ?? 0)}
                   </div>
                 </div>
-                <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
+                <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
                   {r.status}
                 </span>
-                <IconChevronRight size={14} className="text-[var(--text-subtle)] group-hover:text-[var(--text-muted)]" />
+                <IconChevronRight size={14} className="text-[var(--text-subtle)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--text-muted)]" />
               </button>
             </li>
           ))}

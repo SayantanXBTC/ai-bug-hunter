@@ -58,22 +58,21 @@ export function BugIntelligenceSection({ onOpenBugs }: BugIntelligenceSectionPro
   }, []);
 
   return (
-    <section className="rounded-lg border border-violet-100 bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
-      <div className="mb-3 flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-1.5">
-            <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-violet-500" />
-            <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">Bug Intelligence</h2>
+    <section className="abh-card abh-glow-border flex flex-col p-5 sm:p-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary-strong)]">
+            <IconSparkles size={16} />
+          </span>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-violet-500" />
+              <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">Bug Intelligence</h2>
+            </div>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">Failures grouped by shared root cause.</p>
           </div>
-          <p className="mt-0.5 text-xs text-[var(--text-muted)] flex items-center gap-1">
-            <IconSparkles size={12} className="text-violet-500" /> AI-clustered defects from recent failures
-          </p>
         </div>
-        <button
-          type="button"
-          onClick={onOpenBugs}
-          className="inline-flex items-center gap-1 rounded border border-[var(--border)] px-2.5 py-1 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
-        >
+        <button type="button" onClick={onOpenBugs} className="abh-btn abh-btn-ghost abh-btn-sm">
           View all <IconChevronRight size={12} />
         </button>
       </div>
@@ -86,15 +85,25 @@ export function BugIntelligenceSection({ onOpenBugs }: BugIntelligenceSectionPro
         </div>
       )}
       {!error && items && items.length === 0 && (
-        <div className="rounded border border-dashed border-[var(--border)] bg-[var(--surface-hover)] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
-          No bugs detected. Failed tests will be clustered here.
+        <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--border)] px-4 py-8 text-center">
+          <svg width="90" height="56" viewBox="0 0 90 56" aria-hidden className="abh-float">
+            <circle cx="20" cy="28" r="6" fill="var(--primary)" opacity="0.6" />
+            <circle cx="45" cy="14" r="4" fill="var(--secondary)" opacity="0.6" />
+            <circle cx="70" cy="32" r="7" fill="var(--primary)" opacity="0.4" />
+            <path d="M20 28 L45 14 L70 32" stroke="var(--border-strong)" fill="none" strokeDasharray="3 4" />
+          </svg>
+          <p className="mt-3 text-sm text-[var(--text-muted)]">No bugs detected. Failed tests will be clustered here.</p>
         </div>
       )}
       {!error && items && items.length > 0 && (
-        <ul className="divide-y divide-[var(--border)]">
+        <ul className="abh-stagger space-y-1.5">
           {items.map((c) => (
-            <li key={c.id} className="py-2.5">
-              <div className="flex items-start gap-3">
+            <li key={c.id}>
+              <button
+                type="button"
+                onClick={onOpenBugs}
+                className="group flex w-full items-start gap-3 rounded-xl border border-transparent px-3 py-2.5 text-left transition-all hover:border-[var(--border)] hover:bg-[var(--surface-hover)]"
+              >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="truncate text-sm font-medium text-[var(--text)]">
@@ -109,15 +118,24 @@ export function BugIntelligenceSection({ onOpenBugs }: BugIntelligenceSectionPro
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
                     <span>{c.occurrenceCount} occurrence{c.occurrenceCount === 1 ? '' : 's'}</span>
                     <span aria-hidden>·</span>
-                    <span>Confidence {Math.round(c.confidence * 100)}%</span>
-                    <span aria-hidden>·</span>
                     <span>Last seen {formatRelativeTime(c.lastSeenAt)}</span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--surface-hover)]">
+                      <div
+                        className="abh-grow-x h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-400"
+                        style={{ width: `${Math.round(c.confidence * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] tabular-nums text-[var(--text-subtle)]">
+                      {Math.round(c.confidence * 100)}% conf.
+                    </span>
                   </div>
                 </div>
                 <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${severityPill(c.severity)}`}>
                   {c.severity}
                 </span>
-              </div>
+              </button>
             </li>
           ))}
         </ul>

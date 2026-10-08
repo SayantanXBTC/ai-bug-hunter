@@ -3,20 +3,15 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ className = '' }: SkeletonProps): JSX.Element {
-  return (
-    <div
-      aria-hidden
-      className={`bg-[var(--surface-hover)] animate-pulse rounded ${className}`}
-    />
-  );
+  return <div aria-hidden className={`abh-skeleton rounded-lg ${className}`} />;
 }
 
 export function SkeletonCard(): JSX.Element {
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
+    <div className="abh-card p-5">
       <Skeleton className="h-3 w-24" />
-      <Skeleton className="mt-3 h-7 w-20" />
-      <Skeleton className="mt-2 h-3 w-32" />
+      <Skeleton className="mt-4 h-7 w-20" />
+      <Skeleton className="mt-3 h-3 w-32" />
     </div>
   );
 }

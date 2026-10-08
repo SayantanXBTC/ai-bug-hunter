@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PageHeader } from './shared/PageHeader.js';
 import { MetricPanel } from './shared/MetricPanel.js';
 import { StatusPill, type PillTone } from './shared/StatusPill.js';
-import { IconSparkles, IconSpinner, IconXMark, IconExternalLink } from './icons.js';
+import { IconSparkles, IconSpinner, IconXMark, IconExternalLink, IconBug, IconList } from './icons.js';
+import { entryFor } from './navigation.js';
+import { useSpotlight } from '../lib/motion.js';
 import { OrbitalEmptyState } from './shared/OrbitalEmptyState.js';
 import { formatRelativeTime } from '../lib/format.js';
 
@@ -79,13 +81,41 @@ const SEVERITY_DOT: Record<string, string> = {
   unknown: 'bg-neutral-600',
 };
 
-export function BugIntelligence(): JSX.Element {
+const SEVERITY_COLOR: Record<string, string> = {
+  critical: '#ef4444',
+  high: '#f97316',
+  medium: '#f59e0b',
+  low: '#64748b',
+  none: '#475569',
+  unknown: '#475569',
+};
+
+interface BugIntelligenceProps {
+  /** Start an analysis on arrival (quick action / command palette). */
+  analyzeOnMount?: boolean;
+  onActionConsumed?: () => void;
+  onNavigateToRuns?: () => void;
+}
+
+const PIPELINE = [
+  { label: 'Fingerprint', desc: 'Normalize each failure into a signature' },
+  { label: 'Compare', desc: 'Score similarity between failure pairs' },
+  { label: 'Cluster', desc: 'Union strongly-related failures' },
+  { label: 'AI review', desc: 'Ask the model only about ambiguous pairs' },
+];
+
+export function BugIntelligence({
+  analyzeOnMount = false,
+  onActionConsumed,
+  onNavigateToRuns,
+}: BugIntelligenceProps = {}): JSX.Element {
   const [clusters, setClusters] = useState<BugCluster[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [summary, setSummary] = useState<AnalyzeSummary | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [aiMeta, setAiMeta] = useState<OverviewAiMetrics['aiMetrics'] | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   const load = async (): Promise<void> => {
     try {
@@ -127,6 +157,15 @@ export function BugIntelligence(): JSX.Element {
     }
   };
 
+  // Ref guard: StrictMode re-runs mount effects, and analysis is not idempotent-cheap.
+  const autoAnalyzed = useRef(false);
+  useEffect(() => {
+    if (!analyzeOnMount || autoAnalyzed.current) return;
+    autoAnalyzed.current = true;
+    onActionConsumed?.();
+    void analyze();
+  }, [analyzeOnMount]);
+
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
     for (const cl of clusters ?? []) c[cl.status] = (c[cl.status] ?? 0) + 1;
@@ -136,19 +175,19 @@ export function BugIntelligence(): JSX.Element {
   const selected = clusters?.find((c) => c.id === selectedId) ?? null;
   const loading = clusters === null && !error;
 
+  const visible = (clusters ?? []).filter((c) => !statusFilter || c.status === statusFilter);
+  const toggle = (st: string): void => setStatusFilter((cur) => (cur === st ? null : st));
+
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="INTELLIGENCE COMMAND"
         title="Bug Intelligence"
         subtitle="AI-assisted failure investigation and root-cause clustering."
+        icon={<IconBug size={22} />}
+        guide={entryFor('bugs').guide}
         actions={
-          <button
-            type="button"
-            onClick={analyze}
-            disabled={analyzing}
-            className="inline-flex items-center gap-2 rounded-md border border-violet-500/40 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-200 transition-colors hover:bg-violet-500/20 focus:outline-none focus:ring-2 focus:ring-violet-500/50 disabled:opacity-60"
-          >
+          <button type="button" onClick={analyze} disabled={analyzing} className="abh-btn abh-btn-primary">
             {analyzing ? <IconSpinner size={14} /> : <IconSparkles size={14} />}
             {analyzing ? 'Analyzing…' : 'Analyze failures'}
           </button>
@@ -156,48 +195,95 @@ export function BugIntelligence(): JSX.Element {
       />
 
       {error && (
-        <div className="rounded-md border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-300">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-300">
           {error}
         </div>
       )}
-      {summary && (
-        <div className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-muted)]">
-          Analyzed {summary.analyzedRuns} runs · {summary.candidatePairs} candidate pairs ·{' '}
-          {summary.deterministicStrongPairs} deterministic strong · {summary.aiComparisons} AI comparisons ·{' '}
-          {summary.clustersCreated} created · {summary.clustersUpdated} updated · {summary.durationMs}ms
-        </div>
-      )}
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <MetricPanel index={0} label="Open" value={counts.open ?? 0} accent="orange" />
-        <MetricPanel index={1} label="Regressed" value={counts.regressed ?? 0} accent="red" />
-        <MetricPanel index={2} label="Recurring" value={counts.recurring ?? 0} accent="orange" />
-        <MetricPanel index={3} label="Resolved" value={counts.resolved ?? 0} accent="emerald" />
-        <MetricPanel index={4} label="Inconclusive" value={counts.inconclusive ?? 0} accent="neutral" />
+      {/* Engine + pipeline */}
+      <div className="abh-card abh-glow-border relative overflow-hidden p-5">
+        {analyzing && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: 'linear-gradient(180deg, transparent, var(--primary-soft), transparent)',
+              animation: 'abhScan 1.6s linear infinite',
+            }}
+          />
+        )}
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.25em] text-violet-300">
+            <IconSparkles size={12} className={analyzing ? 'abh-spin-slow' : ''} /> AI INVESTIGATION ENGINE
+            {analyzing && <span className="rounded-full bg-[var(--primary-soft)] px-2 py-0.5 normal-case tracking-normal text-[var(--primary-strong)]">running…</span>}
+          </div>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
+            <MetaCell label="Provider" value={aiMeta?.provider ?? '—'} />
+            <MetaCell label="Model" value={aiMeta?.model ?? '—'} />
+            <MetaCell
+              label="Investigations"
+              value={aiMeta?.requestCount !== undefined ? String(aiMeta.requestCount) : '—'}
+            />
+            <MetaCell label="Clusters Analyzed" value={clusters ? String(clusters.length) : '—'} />
+          </dl>
+        </div>
+        <ol className="relative mt-5 grid gap-3 sm:grid-cols-4">
+          {PIPELINE.map((p, i) => (
+            <li key={p.label} className="relative rounded-xl border border-[var(--border)] bg-[var(--surface-hover)] p-3">
+              {i < PIPELINE.length - 1 && (
+                <span aria-hidden className="absolute -right-3 top-1/2 z-10 hidden h-px w-3 overflow-hidden bg-[var(--border-strong)] sm:block">
+                  {analyzing && (
+                    <span
+                      className="absolute top-0 h-px w-2 bg-[var(--secondary)]"
+                      style={{ animation: `abhTravel 1s linear infinite ${i * 0.25}s` }}
+                    />
+                  )}
+                </span>
+              )}
+              <div className="flex items-center gap-2">
+                <span
+                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold text-white ${analyzing ? 'abh-pulse-ring' : ''}`}
+                  style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', animationDelay: `${i * 0.3}s` }}
+                >
+                  {i + 1}
+                </span>
+                <span className="text-xs font-medium text-[var(--text)]">{p.label}</span>
+              </div>
+              <p className="mt-1.5 text-[11px] leading-snug text-[var(--text-subtle)]">{p.desc}</p>
+            </li>
+          ))}
+        </ol>
+        {summary && (
+          <div className="abh-fade-up relative mt-4 flex flex-wrap gap-2 text-[11px]">
+            {[
+              [summary.analyzedRuns, 'runs analyzed'],
+              [summary.candidatePairs, 'candidate pairs'],
+              [summary.deterministicStrongPairs, 'deterministic matches'],
+              [summary.aiComparisons, 'AI comparisons'],
+              [summary.clustersCreated, 'clusters created'],
+              [summary.clustersUpdated, 'clusters updated'],
+              [`${summary.durationMs}ms`, 'duration'],
+            ].map(([v, l]) => (
+              <span key={String(l)} className="rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] px-2.5 py-1 text-[var(--text-muted)]">
+                <span className="font-semibold tabular-nums text-[var(--text)]">{v}</span> {l}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="rounded-xl border border-violet-500/25 bg-[var(--surface-glass)] p-4 backdrop-blur-md">
-        <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.25em] text-violet-300">
-          <IconSparkles size={12} /> AI INVESTIGATION ENGINE
-        </div>
-        <dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-          <MetaCell label="Provider" value={aiMeta?.provider ?? '—'} />
-          <MetaCell label="Model" value={aiMeta?.model ?? '—'} />
-          <MetaCell
-            label="Investigations"
-            value={aiMeta?.requestCount !== undefined ? String(aiMeta.requestCount) : '—'}
-          />
-          <MetaCell
-            label="Clusters Analyzed"
-            value={clusters ? String(clusters.length) : '—'}
-          />
-        </dl>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <MetricPanel index={0} label="Open" value={counts.open ?? 0} accent="orange" onClick={() => toggle('open')} active={statusFilter === 'open'} />
+        <MetricPanel index={1} label="Regressed" value={counts.regressed ?? 0} accent="red" onClick={() => toggle('regressed')} active={statusFilter === 'regressed'} />
+        <MetricPanel index={2} label="Recurring" value={counts.recurring ?? 0} accent="orange" onClick={() => toggle('recurring')} active={statusFilter === 'recurring'} />
+        <MetricPanel index={3} label="Resolved" value={counts.resolved ?? 0} accent="emerald" onClick={() => toggle('resolved')} active={statusFilter === 'resolved'} />
+        <MetricPanel index={4} label="Inconclusive" value={counts.inconclusive ?? 0} accent="neutral" onClick={() => toggle('inconclusive')} active={statusFilter === 'inconclusive'} />
       </div>
 
       {loading ? (
         <div className="grid gap-3 md:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-40 animate-pulse rounded-xl bg-[var(--surface-hover)]" />
+            <div key={i} className="abh-skeleton h-40 rounded-2xl" />
           ))}
         </div>
       ) : !clusters || clusters.length === 0 ? (
@@ -206,11 +292,26 @@ export function BugIntelligence(): JSX.Element {
           accent="violet"
           title="No bugs detected"
           subtitle="AI Bug Intelligence will surface recurring failures as your test history grows."
+          steps={[
+            'Run tests until some of them fail.',
+            'Press Analyze failures to group related failures.',
+            'Open a cluster to read its root cause and timeline.',
+          ]}
           cta={{ label: 'Analyze Failures', onClick: analyze, icon: <IconSparkles size={14} /> }}
+          {...(onNavigateToRuns
+            ? { secondary: { label: 'View test runs', onClick: onNavigateToRuns, icon: <IconList size={14} /> } }
+            : {})}
         />
+      ) : visible.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-[var(--border)] p-8 text-center text-sm text-[var(--text-muted)]">
+          No {statusFilter} clusters.{' '}
+          <button type="button" className="text-[var(--primary-strong)] hover:underline" onClick={() => setStatusFilter(null)}>
+            Show all
+          </button>
+        </div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {clusters.map((c) => (
+        <div className="abh-stagger grid gap-3 md:grid-cols-2">
+          {visible.map((c) => (
             <ClusterCard key={c.id} c={c} onOpen={() => setSelectedId(c.id)} />
           ))}
         </div>
@@ -235,13 +336,17 @@ function MetaCell({ label, value }: { label: string; value: string }): JSX.Eleme
 function ClusterCard({ c, onOpen }: { c: BugCluster; onOpen: () => void }): JSX.Element {
   const sevTone = SEVERITY_TONE[c.severity] ?? 'neutral';
   const statTone = STATUS_TONE[c.status] ?? 'neutral';
+  const color = SEVERITY_COLOR[c.severity] ?? '#475569';
+  const spot = useSpotlight();
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="group flex w-full flex-col rounded-xl border border-[var(--border)] bg-[var(--surface-glass)] p-4 text-left backdrop-blur-md transition-colors hover:border-violet-500/30 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+      onMouseMove={spot}
+      className="abh-card abh-spot abh-lift group flex w-full flex-col p-4 pl-5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
     >
-      <div className="flex items-start justify-between gap-3">
+      <span aria-hidden className="absolute inset-y-3 left-0 w-1 rounded-r-full" style={{ background: color, boxShadow: `0 0 12px ${color}` }} />
+      <div className="relative flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <span
             aria-hidden
@@ -254,14 +359,25 @@ function ClusterCard({ c, onOpen }: { c: BugCluster; onOpen: () => void }): JSX.
           <StatusPill tone={statTone}>{c.status}</StatusPill>
         </div>
       </div>
-      <div className="mt-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--text-subtle)] tabular-nums">
-        {c.occurrenceCount} OCCURRENCES · {c.affectedTestCount} TESTS · {c.affectedPageCount} PAGE
-        {c.affectedPageCount === 1 ? '' : 'S'} · {Math.round(c.confidence * 100)}% CONF
+      {c.rootCauseSummary && (
+        <p className="relative mt-2 line-clamp-2 text-xs text-[var(--text-muted)]">{c.rootCauseSummary}</p>
+      )}
+      <div className="relative mt-3 grid grid-cols-3 gap-2 text-center">
+        {[
+          [c.occurrenceCount, 'occurrences'],
+          [c.affectedTestCount, 'tests'],
+          [`${Math.round(c.confidence * 100)}%`, 'confidence'],
+        ].map(([v, l]) => (
+          <div key={String(l)} className="rounded-lg bg-[var(--surface-hover)] py-1.5">
+            <div className="text-sm font-semibold tabular-nums text-[var(--text)]">{v}</div>
+            <div className="text-[10px] uppercase tracking-wider text-[var(--text-subtle)]">{l}</div>
+          </div>
+        ))}
       </div>
       <MiniTimeline first={c.firstSeenAt} last={c.lastSeenAt} count={c.occurrenceCount} />
-      <div className="mt-3 flex items-center justify-between text-xs text-[var(--text-subtle)] group-hover:text-violet-300">
+      <div className="relative mt-3 flex items-center justify-between text-xs text-[var(--text-subtle)] group-hover:text-violet-300">
         <span>View investigation</span>
-        <IconExternalLink size={12} />
+        <IconExternalLink size={12} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
       </div>
     </button>
   );
@@ -359,7 +475,7 @@ function ClusterModal({
       onClick={onClose}
     >
       <div
-        className="mt-8 w-full max-w-3xl rounded-xl border border-violet-500/25 bg-[var(--surface)] p-6 shadow-2xl"
+        className="mt-8 w-full max-w-3xl rounded-2xl border border-violet-500/25 bg-[var(--surface-elevated)] p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -401,7 +517,7 @@ function ClusterModal({
               </div>
               <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-hover)]">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-400"
+                  className="abh-grow-x h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-400"
                   style={{ width: `${Math.round(cluster.confidence * 100)}%` }}
                 />
               </div>

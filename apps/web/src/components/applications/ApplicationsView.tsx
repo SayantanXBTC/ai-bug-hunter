@@ -5,7 +5,17 @@ import {
   IconGlobe,
   IconRefresh,
   IconChevronRight,
+  IconLayers,
+  IconSparkles,
+  IconCompass,
+  IconCheck,
+  IconExternalLink,
+  IconSearch,
 } from '../icons.js';
+import { MetricPanel } from '../shared/MetricPanel.js';
+import { entryFor } from '../navigation.js';
+import { useSpotlight } from '../../lib/motion.js';
+import { formatRelativeTime } from '../../lib/format.js';
 import { SkeletonCard } from '../dashboard/Skeleton.js';
 import { DashboardError } from '../dashboard/DashboardError.js';
 import { AddApplicationModal } from './AddApplicationModal.js';
@@ -18,6 +28,9 @@ import type { ApplicationRow, ApplicationListResponse } from './types.js';
 interface ApplicationsViewProps {
   role: UserRole;
   onNavigateToTests: (applicationId: string | null) => void;
+  /** Open the "Add application" modal on arrival (quick action / command palette). */
+  openAddOnMount?: boolean;
+  onActionConsumed?: () => void;
 }
 
 interface ListState {
@@ -39,7 +52,12 @@ interface OverviewLite {
   qualityScore?: { score: number; sampleSize: number } | null;
 }
 
-export function ApplicationsView({ role, onNavigateToTests }: ApplicationsViewProps): JSX.Element {
+export function ApplicationsView({
+  role,
+  onNavigateToTests,
+  openAddOnMount = false,
+  onActionConsumed,
+}: ApplicationsViewProps): JSX.Element {
   const canWrite = role === 'admin' || role === 'qa_engineer';
   const [state, setState] = useState<ListState>({ items: null, loading: true, error: null });
   const [refreshTick, setRefreshTick] = useState(0);
@@ -49,6 +67,12 @@ export function ApplicationsView({ role, onNavigateToTests }: ApplicationsViewPr
   const [discoverForId, setDiscoverForId] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<Record<string, AppMetrics>>({});
   const [overview, setOverview] = useState<OverviewLite | null>(null);
+
+  useEffect(() => {
+    if (!openAddOnMount) return;
+    if (canWrite) setAddOpen(true);
+    onActionConsumed?.();
+  }, [openAddOnMount, canWrite, onActionConsumed]);
 
   const fetchList = useCallback(async (): Promise<void> => {
     setState((s) => ({ ...s, loading: s.items === null, error: null }));
@@ -172,29 +196,29 @@ export function ApplicationsView({ role, onNavigateToTests }: ApplicationsViewPr
       ? overview.qualityScore.score
       : null;
 
+  const guide = entryFor('applications').guide;
+
   return (
     <div className="space-y-6">
       <ThemedPageHeader
-        eyebrow="APPLICATION INTELLIGENCE"
+        eyebrow="STEP 1 · APPLICATION INTELLIGENCE"
         title="Applications"
         subtitle="Register applications, run discovery, and orchestrate autonomous QA."
+        icon={<IconLayers size={22} />}
+        guide={guide}
         actions={
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setRefreshTick((t) => t + 1)}
               disabled={state.loading}
-              className="inline-flex items-center gap-1.5 rounded border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-60"
+              className="abh-btn abh-btn-ghost"
             >
               <IconRefresh size={14} className={state.loading ? 'animate-spin' : undefined} />
               Refresh
             </button>
             {canWrite && (
-              <button
-                type="button"
-                onClick={() => setAddOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-              >
+              <button type="button" onClick={() => setAddOpen(true)} className="abh-btn abh-btn-primary">
                 <IconPlus size={14} />
                 Add application
               </button>
@@ -211,16 +235,17 @@ export function ApplicationsView({ role, onNavigateToTests }: ApplicationsViewPr
         quality={avgQuality}
       />
 
-      {items.length > 5 && (
-        <div>
+      {items.length > 3 && (
+        <div className="relative max-w-sm">
           <label htmlFor="app-search" className="sr-only">Search applications</label>
+          <IconSearch size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-subtle)]" />
           <input
             id="app-search"
             type="search"
             placeholder="Search by name or URL"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full max-w-sm rounded border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-1.5 text-sm text-[var(--text)] placeholder:text-[var(--text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+            className="abh-input pl-9"
           />
         </div>
       )}
@@ -244,13 +269,13 @@ export function ApplicationsView({ role, onNavigateToTests }: ApplicationsViewPr
       )}
 
       {!state.loading && !state.error && items.length > 0 && filtered.length === 0 && (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)]">
+        <div className="abh-card p-6 text-sm text-[var(--text-muted)]">
           No applications match &quot;{search}&quot;.
         </div>
       )}
 
       {!state.loading && filtered.length > 0 && (
-        <ul className="space-y-3">
+        <ul className="abh-stagger grid gap-4 xl:grid-cols-2">
           {filtered.map((app) => (
             <ApplicationCard
               key={app.id}
@@ -259,8 +284,23 @@ export function ApplicationsView({ role, onNavigateToTests }: ApplicationsViewPr
               canWrite={canWrite}
               onView={() => setSelectedId(app.id)}
               onDiscover={() => setDiscoverForId(app.id)}
+              onTests={() => onNavigateToTests(app.id)}
             />
           ))}
+          {canWrite && (
+            <li>
+              <button
+                type="button"
+                onClick={() => setAddOpen(true)}
+                className="group flex h-full min-h-[180px] w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--border-strong)] p-6 text-[var(--text-muted)] transition-all hover:border-[var(--primary)] hover:bg-[var(--primary-soft)] hover:text-[var(--text)]"
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border-strong)] transition-transform duration-300 group-hover:rotate-90 group-hover:scale-110">
+                  <IconPlus size={20} />
+                </span>
+                <span className="text-sm font-medium">Add another application</span>
+              </button>
+            </li>
+          )}
         </ul>
       )}
 
@@ -296,28 +336,13 @@ function MetricStrip({
   failures: number | null;
   quality: number | null;
 }): JSX.Element {
-  const items: Array<{ label: string; value: string }> = [
-    { label: 'Applications', value: String(appsCount) },
-    { label: 'Active', value: String(activeCount) },
-    { label: 'Tests', value: String(testsCount) },
-    { label: 'Recent Failures', value: failures === null ? '—' : String(failures) },
-    { label: 'Avg Quality', value: quality === null ? '—' : String(quality) },
-  ];
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-      {items.map((m) => (
-        <div
-          key={m.label}
-          className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3"
-        >
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--text-subtle)]">
-            {m.label}
-          </div>
-          <div className="mt-1 text-xl font-semibold tabular-nums text-[var(--text)]">
-            {m.value}
-          </div>
-        </div>
-      ))}
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <MetricPanel index={0} label="Applications" value={appsCount} accent="violet" />
+      <MetricPanel index={1} label="Active" value={activeCount} accent="cyan" />
+      <MetricPanel index={2} label="Tests" value={testsCount} accent="emerald" />
+      <MetricPanel index={3} label="Recent Failures" value={failures === null ? '—' : failures} accent="red" />
+      <MetricPanel index={4} label="Avg Quality" value={quality === null ? '—' : quality} accent="orange" />
     </div>
   );
 }
@@ -330,6 +355,11 @@ function EmptyState({ canWrite, onAdd }: { canWrite: boolean; onAdd: () => void 
         accent="violet"
         title="No applications yet"
         subtitle="Connect your first application to begin autonomous testing."
+        steps={[
+          'Add the public URL of the app you want tested.',
+          'Press Discover to crawl its pages and forms.',
+          'Generate AI tests from what was found.',
+        ]}
         cta={{ label: 'Add Application', onClick: onAdd, icon: <IconPlus size={14} /> }}
       />
     );
@@ -350,19 +380,72 @@ interface RowProps {
   canWrite: boolean;
   onView: () => void;
   onDiscover: () => void;
+  onTests: () => void;
 }
 
-function ApplicationCard({ app, metrics, canWrite, onView, onDiscover }: RowProps): JSX.Element {
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
+const AVATAR_GRADIENTS = [
+  ['#8b5cf6', '#22d3ee'],
+  ['#a855f7', '#ec4899'],
+  ['#6366f1', '#10b981'],
+  ['#f59e0b', '#ef4444'],
+  ['#06b6d4', '#8b5cf6'],
+];
+
+function gradientFor(id: string): [string, string] {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  const g = AVATAR_GRADIENTS[h % AVATAR_GRADIENTS.length]!;
+  return [g[0]!, g[1]!];
+}
+
+function ApplicationCard({ app, metrics, canWrite, onView, onDiscover, onTests }: RowProps): JSX.Element {
+  const spot = useSpotlight();
   const testCount = metrics?.testCount ?? null;
+  const hasTests = (testCount ?? 0) > 0;
+  const [c1, c2] = gradientFor(app.id);
+  const initials = app.name
+    .split(/\s+/)
+    .map((w) => w[0] ?? '')
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const stages: Array<{ label: string; done: boolean }> = [
+    { label: 'Registered', done: true },
+    { label: 'Tests generated', done: hasTests },
+    { label: 'Ready to run', done: hasTests },
+  ];
+
   return (
-    <li className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)] transition-colors hover:border-[var(--border-strong)]">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <li
+      onMouseMove={spot}
+      className="abh-card abh-spot abh-lift group flex flex-col p-5"
+    >
+      <div className="relative flex items-start gap-4">
+        <div className="relative shrink-0">
+          <span
+            aria-hidden
+            className="absolute inset-0 rounded-2xl opacity-60 blur-lg transition-opacity group-hover:opacity-100"
+            style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}
+          />
+          <span
+            aria-hidden
+            className="relative flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-semibold text-white"
+            style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}
+          >
+            {initials || '·'}
+          </span>
+        </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span
-              className="inline-block h-2 w-2 rounded-full bg-[var(--success)]"
-              aria-hidden
-            />
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={onView}
@@ -370,105 +453,94 @@ function ApplicationCard({ app, metrics, canWrite, onView, onDiscover }: RowProp
             >
               {app.name}
             </button>
-            <span className="inline-flex items-center rounded-full border border-[var(--border-strong)] bg-[var(--primary-soft)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--primary)]">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)]" />
               Ready
             </span>
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+          <a
+            href={app.base_url}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="mt-1 inline-flex max-w-full items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--primary-strong)]"
+          >
             <IconGlobe size={12} />
-            <span className="truncate font-mono">{app.base_url}</span>
+            <span className="truncate font-mono">{hostOf(app.base_url)}</span>
+            <IconExternalLink size={10} className="opacity-0 transition-opacity group-hover:opacity-100" />
+          </a>
+          {app.description && (
+            <p className="mt-1.5 line-clamp-2 text-xs text-[var(--text-subtle)]">{app.description}</p>
+          )}
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-semibold tabular-nums leading-none text-[var(--text)]">
+            {testCount === null ? '—' : testCount}
           </div>
+          <div className="mt-1 text-[10px] uppercase tracking-[0.2em] text-[var(--text-subtle)]">Tests</div>
+        </div>
+      </div>
+
+      {/* Progress through the workflow for this application */}
+      <div className="relative mt-5 flex items-center gap-2">
+        {stages.map((st, i) => (
+          <div key={st.label} className="flex flex-1 items-center gap-2">
+            <span
+              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                st.done ? 'text-white' : 'border border-[var(--border)] text-[var(--text-subtle)]'
+              }`}
+              style={st.done ? { background: 'linear-gradient(135deg, var(--success), var(--secondary))' } : undefined}
+            >
+              {st.done ? <IconCheck size={11} /> : i + 1}
+            </span>
+            <span className={`hidden text-[11px] sm:inline ${st.done ? 'text-[var(--text-muted)]' : 'text-[var(--text-subtle)]'}`}>
+              {st.label}
+            </span>
+            {i < stages.length - 1 && (
+              <span className="h-px flex-1 overflow-hidden bg-[var(--border)]">
+                {st.done && stages[i + 1]!.done && <span className="abh-grow-x block h-full bg-[var(--success)]" />}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="relative mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-4">
+        <div className="text-xs text-[var(--text-subtle)]">
+          {hasTests ? (
+            <span>
+              <span className="text-[var(--text-muted)]">{testCount} test{testCount === 1 ? '' : 's'} ready.</span> Run them from Tests.
+            </span>
+          ) : canWrite ? (
+            <span>
+              <span className="font-medium text-[var(--primary-strong)]">Next:</span> discover pages, then generate tests.
+            </span>
+          ) : (
+            <span>Added {formatRelativeTime(app.created_at ?? null)}</span>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {canWrite && (
             <button
               type="button"
               onClick={onDiscover}
-              className="inline-flex items-center gap-1.5 rounded border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+              className={`abh-btn abh-btn-sm ${hasTests ? 'abh-btn-ghost' : 'abh-btn-primary'}`}
             >
-              <IconRefresh size={12} />
+              <IconCompass size={12} />
               Discover
             </button>
           )}
-          <button
-            type="button"
-            onClick={onView}
-            className="inline-flex items-center gap-1 rounded border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-          >
+          {hasTests && (
+            <button type="button" onClick={onTests} className="abh-btn abh-btn-ghost abh-btn-sm">
+              <IconSparkles size={12} />
+              Tests
+            </button>
+          )}
+          <button type="button" onClick={onView} className="abh-btn abh-btn-ghost abh-btn-sm">
             View
             <IconChevronRight size={12} />
           </button>
         </div>
       </div>
-
-      <div className="mt-4 grid gap-4 border-t border-[var(--border)] pt-4 sm:grid-cols-[1fr_auto]">
-        <dl className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-5">
-          <MetricInline label="Quality" value="—" />
-          <MetricInline label="Tests" value={testCount === null ? '—' : String(testCount)} />
-          <MetricInline label="Pass rate" value="—" />
-          <MetricInline label="Open bugs" value="—" />
-          <MetricInline label="Last tested" value="—" />
-        </dl>
-        <TreeNode name={app.name} />
-      </div>
     </li>
-  );
-}
-
-function MetricInline({ label, value }: { label: string; value: string }): JSX.Element {
-  return (
-    <div>
-      <dt className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-subtle)]">
-        {label}
-      </dt>
-      <dd className="mt-0.5 text-sm font-medium tabular-nums text-[var(--text)]">{value}</dd>
-    </div>
-  );
-}
-
-function TreeNode({ name }: { name: string }): JSX.Element {
-  const label = name.length > 10 ? `${name.slice(0, 9)}…` : name;
-  return (
-    <svg
-      width={220}
-      height={90}
-      viewBox="0 0 220 90"
-      role="img"
-      aria-label={`${name} relationships: Tests, Runs, Bugs, Reliability`}
-      className="text-[var(--primary)]"
-    >
-      <circle cx="30" cy="45" r="10" fill="currentColor" opacity="0.85" />
-      <text x="30" y="48" textAnchor="middle" fontSize="8" fill="white">
-        {label.slice(0, 3)}
-      </text>
-      {[
-        { y: 10, l: 'Tests' },
-        { y: 32, l: 'Runs' },
-        { y: 55, l: 'Bugs' },
-        { y: 78, l: 'Reliab' },
-      ].map((n) => (
-        <g key={n.l}>
-          <line
-            x1={40}
-            y1={45}
-            x2={130}
-            y2={n.y}
-            stroke="currentColor"
-            strokeOpacity="0.4"
-            strokeWidth={1}
-          />
-          <circle cx={135} cy={n.y} r={4} fill="currentColor" opacity="0.6" />
-          <text
-            x={145}
-            y={n.y + 3}
-            fontSize="10"
-            fill="currentColor"
-            opacity="0.85"
-          >
-            {n.l}
-          </text>
-        </g>
-      ))}
-    </svg>
   );
 }

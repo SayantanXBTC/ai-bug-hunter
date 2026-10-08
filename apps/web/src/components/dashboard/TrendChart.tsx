@@ -98,11 +98,11 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
   const lastDate = trend?.buckets[trend.buckets.length - 1]?.startIso.slice(0, 10);
 
   return (
-    <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]">
+    <section className="abh-card p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">Quality Trend</h2>
-          <p className="text-xs text-[var(--text-muted)]">Historical view of key quality signals.</p>
+          <p className="text-xs text-[var(--text-muted)]">How the selected signal moved over time. Hover the line for exact values.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="sr-only" htmlFor="trend-metric">Metric</label>
@@ -110,23 +110,31 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
             id="trend-metric"
             value={metric}
             onChange={(e) => setMetric(e.target.value as TrendMetric)}
-            className="rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-sm text-[var(--text)] focus:outline-none focus:ring-2 focus-visible:ring-[var(--primary)]"
+            className="abh-input w-auto py-1.5"
           >
             {METRIC_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
-          <div role="group" aria-label="Time window" className="inline-flex overflow-hidden rounded border border-[var(--border)]">
+          <div role="group" aria-label="Time window" className="relative inline-flex rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5">
+            <span
+              aria-hidden
+              className="absolute inset-y-0.5 rounded-lg transition-all duration-300"
+              style={{
+                width: 'calc((100% - 4px) / 3)',
+                left: `calc(2px + ${WINDOWS.indexOf(window)} * (100% - 4px) / 3)`,
+                background: 'linear-gradient(135deg, var(--primary), #6d28d9)',
+                boxShadow: '0 4px 14px -6px var(--primary)',
+              }}
+            />
             {WINDOWS.map((w) => (
               <button
                 key={w}
                 type="button"
                 onClick={() => setWindow(w)}
                 aria-pressed={window === w}
-                className={`px-2.5 py-1 text-xs font-medium tabular-nums ${
-                  window === w
-                    ? 'bg-[var(--primary)] text-white'
-                    : 'bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-hover)]'
+                className={`relative z-10 w-11 py-1 text-xs font-medium tabular-nums transition-colors ${
+                  window === w ? 'text-white' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
                 }`}
               >
                 {w}
@@ -137,19 +145,26 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
       </div>
 
       <div className="relative mt-4 h-[280px]">
-        {loading && (
-          <div className="flex h-full items-center justify-center text-sm text-[var(--text-subtle)]">
-            Loading trend…
-          </div>
-        )}
+        {loading && <div className="abh-skeleton h-full w-full rounded-xl" />}
         {!loading && error && (
           <div className="flex h-full items-center justify-center text-sm text-red-600">
             {error}
           </div>
         )}
         {!loading && !error && trend && (trend.insufficient || !chart) && (
-          <div className="flex h-full items-center justify-center text-sm text-[var(--text-muted)]">
-            Not enough historical data yet.
+          <div className="flex h-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[var(--border)] text-center">
+            <svg width="180" height="60" viewBox="0 0 180 60" aria-hidden>
+              <path
+                d="M0 45 C 30 40, 40 20, 70 28 S 120 50, 140 22 S 170 10, 180 14"
+                fill="none"
+                stroke="var(--primary)"
+                strokeOpacity="0.5"
+                strokeWidth="2"
+                strokeDasharray="4 6"
+              />
+            </svg>
+            <div className="text-sm text-[var(--text-muted)]">The trend line appears once runs span a few days.</div>
+            <div className="text-xs text-[var(--text-subtle)]">Keep running tests; each day adds a data point.</div>
           </div>
         )}
         {!loading && !error && trend && !trend.insufficient && chart && (
@@ -162,6 +177,16 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
               preserveAspectRatio="none"
               onMouseLeave={() => setHoverIdx(null)}
             >
+              <defs>
+                <linearGradient id="trend-area" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="var(--primary)" stopOpacity="0.35" />
+                  <stop offset="1" stopColor="var(--primary)" stopOpacity="0" />
+                </linearGradient>
+                <linearGradient id="trend-line" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stopColor="var(--primary)" />
+                  <stop offset="1" stopColor="var(--secondary)" />
+                </linearGradient>
+              </defs>
               {chart.gridYs.map((y, i) => (
                 <line
                   key={i}
@@ -169,33 +194,59 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
                   x2={chart.width - chart.padR}
                   y1={y}
                   y2={y}
-                  stroke="#e5e5e5"
+                  stroke="var(--border)"
                   strokeWidth={1}
-                  strokeDasharray="3 3"
+                  strokeDasharray="3 5"
                 />
               ))}
-              <text
-                x={chart.padL - 6}
-                y={chart.padT + 4}
-                fontSize="10"
-                fill="#a3a3a3"
-                textAnchor="end"
-              >
+              <text x={chart.padL - 6} y={chart.padT + 4} fontSize="10" fill="var(--text-subtle)" textAnchor="end">
                 {formatYValue(metric, chart.max)}
               </text>
-              <text
-                x={chart.padL - 6}
-                y={chart.height - chart.padB}
-                fontSize="10"
-                fill="#a3a3a3"
-                textAnchor="end"
-              >
+              <text x={chart.padL - 6} y={chart.height - chart.padB} fontSize="10" fill="var(--text-subtle)" textAnchor="end">
                 {formatYValue(metric, chart.min)}
               </text>
-              <path d={chart.path} fill="none" stroke="#171717" strokeWidth={2} />
+              {chart.points.length > 1 && (
+                <path
+                  key={`area-${metric}-${window}`}
+                  className="abh-fade-in"
+                  d={`${chart.path} L${chart.points[chart.points.length - 1]!.x},${chart.height - chart.padB} L${chart.points[0]!.x},${chart.height - chart.padB} Z`}
+                  fill="url(#trend-area)"
+                />
+              )}
+              <path
+                key={`line-${metric}-${window}`}
+                d={chart.path}
+                fill="none"
+                stroke="url(#trend-line)"
+                strokeWidth={2.5}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                pathLength={1}
+                strokeDasharray="1"
+                strokeDashoffset="1"
+                style={{ animation: 'abhDash 1.2s var(--ease-out) forwards' }}
+              />
+              {hoverIdx !== null && chart.points[hoverIdx] && (
+                <line
+                  x1={chart.points[hoverIdx]!.x}
+                  x2={chart.points[hoverIdx]!.x}
+                  y1={chart.padT}
+                  y2={chart.height - chart.padB}
+                  stroke="var(--primary)"
+                  strokeOpacity="0.4"
+                  strokeDasharray="3 3"
+                />
+              )}
               {chart.points.map((p, i) => (
                 <g key={p.startIso}>
-                  <circle cx={p.x} cy={p.y} r={2.5} fill="#171717" />
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={hoverIdx === i ? 5 : 3}
+                    fill="var(--surface)"
+                    stroke={hoverIdx === i ? 'var(--secondary)' : 'var(--primary)'}
+                    strokeWidth={2}
+                  />
                   <rect
                     x={p.x - (chart.points[1] ? (chart.points[1].x - chart.points[0]!.x) / 2 : 20)}
                     y={chart.padT}
@@ -209,7 +260,7 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
                 </g>
               ))}
               {firstDate && (
-                <text x={chart.padL} y={chart.height - 8} fontSize="10" fill="#a3a3a3">
+                <text x={chart.padL} y={chart.height - 8} fontSize="10" fill="var(--text-subtle)">
                   {firstDate}
                 </text>
               )}
@@ -218,7 +269,7 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
                   x={chart.width - chart.padR}
                   y={chart.height - 8}
                   fontSize="10"
-                  fill="#a3a3a3"
+                  fill="var(--text-subtle)"
                   textAnchor="end"
                 >
                   {lastDate}
@@ -228,13 +279,14 @@ export function TrendChartSection({ applicationId }: TrendChartSectionProps): JS
             {hoverIdx !== null && chart.points[hoverIdx] && (
               <div
                 role="tooltip"
-                className="pointer-events-none absolute z-10 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text)] shadow-[var(--shadow)]"
+                className="abh-scale-in pointer-events-none absolute z-10 rounded-lg border border-[var(--border-strong)] px-2.5 py-1.5 text-xs text-[var(--text)] shadow-[var(--shadow)] backdrop-blur-md"
                 style={{
-                  left: `calc(${(chart.points[hoverIdx]!.x / chart.width) * 100}% + 8px)`,
-                  top: `calc(${(chart.points[hoverIdx]!.y / chart.height) * 100}% - 8px)`,
+                  background: 'var(--surface-glass)',
+                  left: `calc(${(chart.points[hoverIdx]!.x / chart.width) * 100}% + 10px)`,
+                  top: `calc(${(chart.points[hoverIdx]!.y / chart.height) * 100}% - 12px)`,
                 }}
               >
-                <div className="font-medium tabular-nums">
+                <div className="font-semibold tabular-nums">
                   {formatYValue(metric, chart.points[hoverIdx]!.value)}
                 </div>
                 <div className="text-[var(--text-muted)]">

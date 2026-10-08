@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from './shared/PageHeader.js';
 import { MetricPanel } from './shared/MetricPanel.js';
 import { StatusPill, type PillTone } from './shared/StatusPill.js';
-import { IconRefresh, IconSpinner } from './icons.js';
+import { IconRefresh, IconSpinner, IconRadar, IconSparkles } from './icons.js';
+import { entryFor } from './navigation.js';
+import { ACCENT_COLOR } from './shared/MetricPanel.js';
 import { OrbitalEmptyState } from './shared/OrbitalEmptyState.js';
 import { formatPercent } from '../lib/format.js';
 
@@ -47,11 +49,65 @@ const HINTS: Record<Reliability['status'], string> = {
 
 const MIN_RUNS_DEFAULT = 5;
 
-export function TestReliability(): JSX.Element {
+const STATUS_COLOR: Record<Reliability['status'], string> = {
+  stable: ACCENT_COLOR.emerald,
+  suspected_flaky: ACCENT_COLOR.orange,
+  flaky: ACCENT_COLOR.red,
+  unstable: '#f97316',
+  insufficient_data: ACCENT_COLOR.neutral,
+};
+
+const ORDER: Reliability['status'][] = ['stable', 'suspected_flaky', 'flaky', 'unstable', 'insufficient_data'];
+
+function Donut({ counts, total }: { counts: Record<Reliability['status'], number>; total: number }): JSX.Element {
+  const r = 52;
+  const c = 2 * Math.PI * r;
+  let offset = 0;
+  const stableShare = total > 0 ? counts.stable / total : 0;
+  return (
+    <div className="relative h-[140px] w-[140px] shrink-0">
+      <svg viewBox="0 0 140 140" className="h-full w-full -rotate-90" aria-hidden>
+        <circle cx="70" cy="70" r={r} fill="none" stroke="var(--surface-hover)" strokeWidth="14" />
+        {total > 0 &&
+          ORDER.map((st) => {
+            const len = (counts[st] / total) * c;
+            if (len === 0) return null;
+            const el = (
+              <circle
+                key={st}
+                cx="70"
+                cy="70"
+                r={r}
+                fill="none"
+                stroke={STATUS_COLOR[st]}
+                strokeWidth="14"
+                strokeDasharray={`${Math.max(0, len - 2)} ${c}`}
+                strokeDashoffset={-offset}
+                className="abh-fade-in"
+              />
+            );
+            offset += len;
+            return el;
+          })}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="text-2xl font-semibold tabular-nums text-[var(--text)]">{total > 0 ? `${Math.round(stableShare * 100)}%` : '—'}</div>
+        <div className="text-[10px] uppercase tracking-widest text-[var(--text-subtle)]">stable</div>
+      </div>
+    </div>
+  );
+}
+
+interface TestReliabilityProps {
+  onNavigateToTests?: () => void;
+}
+
+export function TestReliability({ onNavigateToTests }: TestReliabilityProps = {}): JSX.Element {
   const [items, setItems] = useState<Reliability[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [filter, setFilter] = useState<Reliability['status'] | null>(null);
 
   const load = async (): Promise<void> => {
     try {
@@ -104,19 +160,20 @@ export function TestReliability(): JSX.Element {
 
   const loading = items === null && !error;
 
+  const total = items?.length ?? 0;
+  const listed = (items ?? []).filter((r) => !filter || r.status === filter);
+  const toggle = (st: Reliability['status']): void => setFilter((cur) => (cur === st ? null : st));
+
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="STABILITY MATRIX"
         title="Test Reliability"
         subtitle="Historical stability and flakiness analysis across your test suite."
+        icon={<IconRadar size={22} />}
+        guide={entryFor('reliability').guide}
         actions={
-          <button
-            type="button"
-            onClick={recalc}
-            disabled={recalculating}
-            className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface-hover)] px-3 py-1.5 text-xs font-medium text-[var(--text)] transition-colors hover:border-violet-500/40 hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-violet-500/40 disabled:opacity-60"
-          >
+          <button type="button" onClick={recalc} disabled={recalculating} className="abh-btn abh-btn-primary">
             {recalculating ? <IconSpinner size={14} /> : <IconRefresh size={14} />}
             {recalculating ? 'Recalculating…' : 'Recalculate'}
           </button>
@@ -124,26 +181,58 @@ export function TestReliability(): JSX.Element {
       />
 
       {error && (
-        <div className="rounded-md border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-300">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-300">
           {error}
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <MetricPanel index={0} label="Stable" value={counts.stable} hint={HINTS.stable} accent="emerald" />
-        <MetricPanel index={1} label="Suspected Flaky" value={counts.suspected_flaky} hint={HINTS.suspected_flaky} accent="orange" />
-        <MetricPanel index={2} label="Flaky" value={counts.flaky} hint={HINTS.flaky} accent="red" />
-        <MetricPanel index={3} label="Unstable" value={counts.unstable} hint={HINTS.unstable} accent="orange" />
-        <MetricPanel index={4} label="Insufficient" value={counts.insufficient_data} hint={HINTS.insufficient_data} accent="neutral" />
+        <MetricPanel index={0} label="Stable" value={counts.stable} hint={HINTS.stable} accent="emerald" onClick={() => toggle('stable')} active={filter === 'stable'} />
+        <MetricPanel index={1} label="Suspected Flaky" value={counts.suspected_flaky} hint={HINTS.suspected_flaky} accent="orange" onClick={() => toggle('suspected_flaky')} active={filter === 'suspected_flaky'} />
+        <MetricPanel index={2} label="Flaky" value={counts.flaky} hint={HINTS.flaky} accent="red" onClick={() => toggle('flaky')} active={filter === 'flaky'} />
+        <MetricPanel index={3} label="Unstable" value={counts.unstable} hint={HINTS.unstable} accent="orange" onClick={() => toggle('unstable')} active={filter === 'unstable'} />
+        <MetricPanel index={4} label="Insufficient" value={counts.insufficient_data} hint={HINTS.insufficient_data} accent="neutral" onClick={() => toggle('insufficient_data')} active={filter === 'insufficient_data'} />
       </div>
 
+      {total > 0 && (
+        <div className="abh-card flex flex-wrap items-center gap-6 p-5">
+          <Donut counts={counts} total={total} />
+          <div className="min-w-[220px] flex-1 space-y-2">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-subtle)]">
+              Suite distribution · {total} test{total === 1 ? '' : 's'}
+            </div>
+            {ORDER.map((st, i) => (
+              <button
+                key={st}
+                type="button"
+                onClick={() => toggle(st)}
+                className={`group flex w-full items-center gap-3 rounded-lg px-2 py-1 text-left transition-colors hover:bg-[var(--surface-hover)] ${filter === st ? 'bg-[var(--surface-hover)]' : ''}`}
+              >
+                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: STATUS_COLOR[st] }} />
+                <span className="w-32 text-xs text-[var(--text-muted)] group-hover:text-[var(--text)]">{STATUS_LABEL[st]}</span>
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--surface-hover)]">
+                  <div
+                    className="abh-grow-x h-full rounded-full"
+                    style={{ width: `${(counts[st] / total) * 100}%`, background: STATUS_COLOR[st], animationDelay: `${i * 80}ms` }}
+                  />
+                </div>
+                <span className="w-6 text-right text-xs tabular-nums text-[var(--text-muted)]">{counts[st]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loading ? (
-        <div className="h-40 animate-pulse rounded-xl bg-[var(--surface-hover)]" />
+        <div className="abh-skeleton h-40 rounded-2xl" />
       ) : matrixRows.length > 0 && maxCols > 0 ? (
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-glass)] p-5 backdrop-blur-md">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
-              STABILITY MATRIX
+        <div className="abh-card p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-subtle)]">
+                STABILITY MATRIX
+              </div>
+              <p className="mt-0.5 text-xs text-[var(--text-muted)]">Each square is one run. Alternating colours on a row usually means flakiness.</p>
             </div>
             <div className="text-[10px] uppercase tracking-widest text-[var(--text-subtle)] tabular-nums">
               {matrixRows.length} TEST{matrixRows.length === 1 ? '' : 'S'} · LAST {maxCols} RUN
@@ -165,11 +254,11 @@ export function TestReliability(): JSX.Element {
                 </tr>
               </thead>
               <tbody>
-                {matrixRows.map((r) => {
+                {matrixRows.map((r, row) => {
                   const runs = (r.recentRuns ?? []).slice(0, maxCols);
                   return (
-                    <tr key={r.externalTestId} className="border-t border-[var(--border)]">
-                      <td className="max-w-[220px] truncate py-1.5 pr-2 text-[var(--text-muted)]" title={r.testName}>
+                    <tr key={r.externalTestId} className="group border-t border-[var(--border)] hover:bg-[var(--surface-hover)]">
+                      <td className="max-w-[220px] truncate py-2 pr-2 text-[var(--text-muted)] group-hover:text-[var(--text)]" title={r.testName}>
                         {r.testName}
                       </td>
                       {Array.from({ length: maxCols }).map((_, i) => {
@@ -177,14 +266,15 @@ export function TestReliability(): JSX.Element {
                         const cls = !run
                           ? 'bg-[var(--surface-hover)]'
                           : run.status === 'passed'
-                            ? 'bg-emerald-500/70'
+                            ? 'bg-emerald-500/80 shadow-[0_0_8px_-2px_rgba(16,185,129,0.8)]'
                             : run.status === 'failed' || run.status === 'error'
-                              ? 'bg-red-500/70'
+                              ? 'bg-red-500/80 shadow-[0_0_8px_-2px_rgba(239,68,68,0.8)]'
                               : 'bg-[var(--text-subtle)]';
                         return (
-                          <td key={i} className="px-1 py-1">
+                          <td key={i} className="px-1 py-1.5">
                             <div
-                              className={`mx-auto h-3 w-3 rounded-sm ${cls}`}
+                              className={`mx-auto h-3.5 w-3.5 rounded-[4px] transition-transform duration-200 hover:scale-150 ${cls}`}
+                              style={{ animation: 'abhScaleIn 0.4s var(--ease-out) backwards', animationDelay: `${row * 30 + i * 25}ms` }}
                               title={run ? `${run.status} · ${new Date(run.at).toLocaleString()}` : 'no data'}
                             />
                           </td>
@@ -211,23 +301,36 @@ export function TestReliability(): JSX.Element {
           accent="violet"
           title="Insufficient data"
           subtitle="Run tests repeatedly to establish reliability patterns."
+          steps={[
+            'Run each test several times from the Tests page.',
+            'Come back and press Recalculate.',
+            'Flaky and unstable tests get flagged with the reason why.',
+          ]}
+          {...(onNavigateToTests
+            ? { cta: { label: 'Go to Tests', onClick: onNavigateToTests, icon: <IconSparkles size={14} /> } }
+            : {})}
         />
       )}
 
-      {items && items.length > 0 && (
-        <div className="space-y-2">
-          {items.map((r) => (
+      {listed.length > 0 && (
+        <div className="abh-stagger space-y-2">
+          {listed.map((r) => (
             <ReliabilityCard key={r.externalTestId} r={r} />
           ))}
         </div>
       )}
 
+      {items && items.length > 0 && listed.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-[var(--border)] p-6 text-center text-sm text-[var(--text-muted)]">
+          No tests in this state.{' '}
+          <button type="button" className="text-[var(--primary-strong)] hover:underline" onClick={() => setFilter(null)}>
+            Show all
+          </button>
+        </div>
+      )}
+
       {items && items.length > 20 && matrixRows.length < items.length && (
-        <button
-          type="button"
-          onClick={() => setShowAll((v) => !v)}
-          className="mx-auto block rounded-md border border-[var(--border)] bg-[var(--surface-hover)] px-3 py-1.5 text-xs text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
-        >
+        <button type="button" onClick={() => setShowAll((v) => !v)} className="abh-btn abh-btn-ghost mx-auto flex">
           {showAll ? 'Show less' : `Show all ${items.length}`}
         </button>
       )}
@@ -245,33 +348,52 @@ function LegendSwatch({ cls, label }: { cls: string; label: string }): JSX.Eleme
 
 function ReliabilityCard({ r }: { r: Reliability }): JSX.Element {
   const insufficient = r.status === 'insufficient_data';
+  const color = STATUS_COLOR[r.status];
   return (
     <div
-      className={`rounded-xl border p-4 backdrop-blur-md ${
-        insufficient
-          ? 'border-[var(--border)] bg-[var(--surface)] opacity-70'
-          : 'border-[var(--border)] bg-[var(--surface-glass)]'
-      }`}
+      className={`abh-card abh-lift relative overflow-hidden p-4 pl-5 ${insufficient ? 'opacity-75' : ''}`}
     >
+      <span aria-hidden className="absolute inset-y-3 left-0 w-1 rounded-r-full" style={{ background: color }} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="truncate text-sm font-medium text-[var(--text)]">{r.testName}</div>
-          <div className="mt-0.5 font-mono text-[10px] text-[var(--text-subtle)] truncate">
+          <div className="mt-0.5 truncate font-mono text-[10px] text-[var(--text-subtle)]">
             {r.externalTestId}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {(r.recentRuns?.length ?? 0) > 0 && (
+            <div className="hidden items-center gap-0.5 sm:flex" aria-hidden>
+              {(r.recentRuns ?? []).slice(0, 10).map((run, i) => (
+                <span
+                  key={i}
+                  className="h-4 w-1.5 rounded-full"
+                  style={{ background: run.status === 'passed' ? 'var(--success)' : run.status === 'failed' || run.status === 'error' ? 'var(--danger)' : 'var(--text-subtle)' }}
+                />
+              ))}
+            </div>
+          )}
           <StatusPill tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</StatusPill>
         </div>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
         <Stat label="Passed" value={`${r.passCount} / ${r.totalRuns}`} />
         <Stat label="Failed" value={String(r.failureCount)} />
-        <Stat label="Reliability" value={formatPercent(r.reliabilityScore, 0)} />
-        <Stat label="Flaky Score" value={formatPercent(r.flakyScore, 0)} />
+        <div>
+          <Stat label="Reliability" value={formatPercent(r.reliabilityScore, 0)} />
+          <div className="mt-1 h-1 overflow-hidden rounded-full bg-[var(--surface-hover)]">
+            <div className="abh-grow-x h-full rounded-full bg-[var(--success)]" style={{ width: `${Math.round(r.reliabilityScore * 100)}%` }} />
+          </div>
+        </div>
+        <div>
+          <Stat label="Flaky Score" value={formatPercent(r.flakyScore, 0)} />
+          <div className="mt-1 h-1 overflow-hidden rounded-full bg-[var(--surface-hover)]">
+            <div className="abh-grow-x h-full rounded-full bg-[var(--warning)]" style={{ width: `${Math.round(r.flakyScore * 100)}%` }} />
+          </div>
+        </div>
       </div>
       {insufficient ? (
-        <div className="mt-3 rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 text-xs text-[var(--text-muted)]">
+        <div className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--surface-hover)] p-3 text-xs text-[var(--text-muted)]">
           <span className="font-medium uppercase tracking-widest text-[var(--text-subtle)]">
             INSUFFICIENT DATA
           </span>{' '}
@@ -287,7 +409,7 @@ function ReliabilityCard({ r }: { r: Reliability }): JSX.Element {
             <ul className="mt-2 space-y-1 text-xs text-[var(--text-subtle)]">
               {r.signals.slice(0, 4).map((s, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="text-[var(--text-subtle)]">›</span>
+                  <span className="text-[var(--primary-strong)]">›</span>
                   <span>
                     <span className="text-[var(--text-muted)]">{s.name}</span>{' '}
                     <span className="tabular-nums text-[var(--text-subtle)]">

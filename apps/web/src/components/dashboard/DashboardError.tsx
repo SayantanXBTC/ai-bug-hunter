@@ -10,22 +10,21 @@ export function DashboardError({ message, requestId, onRetry }: DashboardErrorPr
   return (
     <div
       role="alert"
-      className="rounded-lg border border-red-200 bg-red-50 p-5 text-red-700 shadow-[var(--shadow)]"
+      className="abh-card abh-fade-up p-5"
+      style={{ borderColor: 'rgba(239,68,68,0.35)', background: 'var(--danger-soft)' }}
     >
       <div className="flex items-start gap-3">
-        <IconAlertTriangle size={20} className="mt-0.5 shrink-0" />
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--danger-soft)] text-[var(--danger)]">
+          <IconAlertTriangle size={18} />
+        </span>
         <div className="flex-1">
-          <div className="font-semibold">Failed to load dashboard</div>
-          <div className="mt-1 text-sm text-red-600">{message}</div>
+          <div className="font-semibold text-[var(--text)]">Something went wrong while loading</div>
+          <div className="mt-1 text-sm text-[var(--text-muted)]">{message}</div>
           {requestId && (
-            <div className="mt-2 text-xs text-red-500">Request ID: {requestId}</div>
+            <div className="mt-2 font-mono text-[11px] text-[var(--text-subtle)]">Request ID: {requestId}</div>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onRetry}
-          className="inline-flex items-center gap-1.5 rounded border border-red-300 bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-400"
-        >
+        <button type="button" onClick={onRetry} className="abh-btn abh-btn-ghost">
           <IconRefresh size={14} />
           Retry
         </button>

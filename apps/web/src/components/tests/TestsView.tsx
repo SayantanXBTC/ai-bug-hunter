@@ -7,7 +7,11 @@ import {
   IconEye,
   IconGlobe,
   IconAlertTriangle,
+  IconSearch,
+  IconLayers,
 } from '../icons.js';
+import { MetricPanel } from '../shared/MetricPanel.js';
+import { entryFor } from '../navigation.js';
 import { OrbitalEmptyState } from '../shared/OrbitalEmptyState.js';
 import { ThemedPageHeader } from '../shared/ThemedPageHeader.js';
 import { SkeletonCard } from '../dashboard/Skeleton.js';
@@ -29,6 +33,9 @@ interface TestsViewProps {
   role: UserRole;
   onNavigateToRun?: (runId: string) => void;
   onNavigateToApplications?: (applicationId: string) => void;
+  /** Open the generate modal on arrival (quick action / command palette). */
+  openGenerateOnMount?: boolean;
+  onActionConsumed?: () => void;
 }
 
 interface ListState {
@@ -45,6 +52,8 @@ export function TestsView({
   role,
   onNavigateToRun,
   onNavigateToApplications,
+  openGenerateOnMount = false,
+  onActionConsumed,
 }: TestsViewProps): JSX.Element {
   const canWrite = role === 'admin' || role === 'qa_engineer';
   const [state, setState] = useState<ListState>({ loading: true, error: null, items: null });
@@ -63,6 +72,12 @@ export function TestsView({
   const [reliabilityByExternalId, setReliabilityByExternalId] = useState<
     Record<string, ReliabilityRecord>
   >({});
+
+  useEffect(() => {
+    if (!openGenerateOnMount) return;
+    if (canWrite) setGenerateOpen(true);
+    onActionConsumed?.();
+  }, [openGenerateOnMount, canWrite, onActionConsumed]);
 
   const fetchList = useCallback(async () => {
     setState((s) => ({ ...s, loading: s.items === null, error: null }));
@@ -205,29 +220,38 @@ export function TestsView({
     );
   }
 
+  const aiCount = items.filter((t) => sourceOfTestCase(t) === 'ai').length;
+  const enabledCount = items.filter((t) => t.enabled).length;
+  const withRuns = items.filter((t) => {
+    const ext = t.external_test_id ?? t.definition.id;
+    return ext ? Boolean(runByExternalId[ext]) : false;
+  });
+  const passingCount = withRuns.filter((t) => {
+    const ext = t.external_test_id ?? t.definition.id;
+    return ext ? runByExternalId[ext]?.status === 'passed' : false;
+  }).length;
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <ThemedPageHeader
-        eyebrow="TEST INTELLIGENCE"
+        eyebrow="STEP 2 · TEST INTELLIGENCE"
         title="Tests"
         subtitle="Create, inspect, validate, and execute executable QA tests."
+        icon={<IconSparkles size={22} />}
+        guide={entryFor('tests').guide}
         actions={
           <>
             <button
               type="button"
               onClick={() => setTick((t) => t + 1)}
               disabled={state.loading}
-              className="inline-flex items-center gap-1.5 rounded border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-60"
+              className="abh-btn abh-btn-ghost"
             >
               <IconRefresh size={14} className={state.loading ? 'animate-spin' : undefined} />
               Refresh
             </button>
             {canWrite && (
-              <button
-                type="button"
-                onClick={() => setGenerateOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-              >
+              <button type="button" onClick={() => setGenerateOpen(true)} className="abh-btn abh-btn-primary">
                 <IconSparkles size={14} />
                 Generate Tests
               </button>
@@ -236,23 +260,41 @@ export function TestsView({
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2">
+      {items.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <MetricPanel index={0} label="Total tests" value={items.length} accent="violet" />
+          <MetricPanel index={1} label="AI-written" value={aiCount} accent="cyan" />
+          <MetricPanel index={2} label="Enabled" value={enabledCount} accent="emerald" />
+          <MetricPanel
+            index={3}
+            label="Passing last run"
+            value={withRuns.length === 0 ? '—' : `${passingCount}/${withRuns.length}`}
+            hint={withRuns.length === 0 ? 'Run a test to see results' : undefined}
+            accent="orange"
+          />
+        </div>
+      )}
+
+      <div className="abh-card flex flex-wrap items-center gap-2 p-3">
         <label className="sr-only" htmlFor="test-search">
           Search tests
         </label>
-        <input
-          id="test-search"
-          type="search"
-          placeholder="Search tests by name"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-xs rounded border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-1.5 text-sm text-[var(--text)] placeholder:text-[var(--text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-        />
+        <div className="relative w-full max-w-xs">
+          <IconSearch size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-subtle)]" />
+          <input
+            id="test-search"
+            type="search"
+            placeholder="Search tests by name"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="abh-input pl-9"
+          />
+        </div>
         <select
           value={appFilter}
           onChange={(e) => setAppFilter(e.target.value)}
           aria-label="Filter by application"
-          className="rounded border border-[var(--border)] bg-[var(--surface-elevated)] px-2 py-1.5 text-sm text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+          className="abh-input w-auto"
         >
           <option value="all">All applications</option>
           {apps.map((a) => (
@@ -265,22 +307,32 @@ export function TestsView({
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
           aria-label="Filter by status"
-          className="rounded border border-[var(--border)] bg-[var(--surface-elevated)] px-2 py-1.5 text-sm text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+          className="abh-input w-auto"
         >
           <option value="all">All statuses</option>
           <option value="enabled">Enabled</option>
           <option value="disabled">Disabled</option>
         </select>
-        <select
-          value={sourceFilter}
-          onChange={(e) => setSourceFilter(e.target.value as SourceFilter)}
-          aria-label="Filter by source"
-          className="rounded border border-[var(--border)] bg-[var(--surface-elevated)] px-2 py-1.5 text-sm text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-        >
-          <option value="all">All sources</option>
-          <option value="ai">AI Generated</option>
-          <option value="manual">Manual</option>
-        </select>
+        <div role="group" aria-label="Filter by source" className="ml-auto flex items-center gap-1.5">
+          {(
+            [
+              ['all', 'All sources'],
+              ['ai', 'AI Generated'],
+              ['manual', 'Manual'],
+            ] as Array<[SourceFilter, string]>
+          ).map(([v, label]) => (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={sourceFilter === v}
+              onClick={() => setSourceFilter(v)}
+              className="abh-chip"
+            >
+              {v === 'ai' && <IconSparkles size={11} />}
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {state.error && !state.loading && (
@@ -300,80 +352,91 @@ export function TestsView({
       )}
 
       {!state.loading && !state.error && items.length === 0 && (
-        <EmptyState canWrite={canWrite} onGenerate={() => setGenerateOpen(true)} />
+        <EmptyState
+          canWrite={canWrite}
+          hasApps={apps.length > 0}
+          onGenerate={() => setGenerateOpen(true)}
+          {...(onNavigateToApplications ? { onAddApp: () => onNavigateToApplications('') } : {})}
+        />
       )}
 
       {!state.loading && items.length > 0 && filtered.length === 0 && (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)] shadow-[var(--shadow)]">
+        <div className="abh-card p-6 text-sm text-[var(--text-muted)]">
           No tests match the current filters.
         </div>
       )}
 
       {!state.loading && filtered.length > 0 && (
-        <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]">
+        <div className="abh-card overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-[var(--surface-hover)] text-left text-[11px] font-medium uppercase tracking-wider text-[var(--text-subtle)]">
-              <tr>
-                <th className="px-4 py-2">Test</th>
-                <th className="px-4 py-2">Application</th>
-                <th className="px-4 py-2">Source</th>
-                <th className="px-4 py-2">Status</th>
-                <th className="px-4 py-2">Last Result</th>
-                <th className="px-4 py-2">Reliability</th>
-                <th className="px-4 py-2">Last Run</th>
-                <th className="px-4 py-2 text-right">Actions</th>
+            <thead className="text-left text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--text-subtle)]">
+              <tr className="border-b border-[var(--border)]">
+                <th className="px-4 py-3">Test</th>
+                <th className="px-4 py-3">Application</th>
+                <th className="px-4 py-3">Source</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Last Result</th>
+                <th className="px-4 py-3">Reliability</th>
+                <th className="px-4 py-3">Last Run</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--border)]">
+            <tbody className="abh-stagger">
               {filtered.map((t) => {
                 const externalId = t.external_test_id ?? t.definition.id;
                 const lastRun = externalId ? runByExternalId[externalId] : undefined;
                 const rel = externalId ? reliabilityByExternalId[externalId] : undefined;
                 const app = apps.find((a) => a.id === t.application_id);
                 return (
-                  <tr key={t.id} className="hover:bg-[var(--surface-hover)]">
-                    <td className="px-4 py-3">
+                  <tr key={t.id} className="group border-b border-[var(--border)] transition-colors last:border-0 hover:bg-[var(--surface-hover)]">
+                    <td className="relative px-4 py-3.5">
+                      <span
+                        aria-hidden
+                        className="absolute inset-y-2 left-0 w-0.5 origin-center scale-y-0 rounded-full transition-transform duration-300 group-hover:scale-y-100"
+                        style={{ background: 'linear-gradient(180deg, var(--primary), var(--secondary))' }}
+                      />
                       <button
                         type="button"
                         onClick={() => setSelectedId(t.id)}
-                        className="text-left font-medium text-[var(--text)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                        className="text-left font-medium text-[var(--text)] transition-colors hover:text-[var(--primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
                       >
                         {t.name}
                       </button>
                       <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[var(--text-subtle)]">
                         <IconGlobe size={10} />
-                        <span className="truncate font-mono">{t.target_url}</span>
+                        <span className="max-w-[280px] truncate font-mono">{t.target_url}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-[var(--text)]">
+                    <td className="px-4 py-3.5 text-[var(--text-muted)]">
                       {app ? app.name : <span className="text-[var(--text-subtle)]">—</span>}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <SourcePill isAi={sourceOfTestCase(t) === 'ai'} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <StatusPill enabled={t.enabled} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       {lastRun ? (
                         <RunStatusPill status={lastRun.status} />
                       ) : (
-                        <span className="text-[var(--text-subtle)]">—</span>
+                        <span className="text-xs text-[var(--text-subtle)]">Not run yet</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       {rel ? <ReliabilityCell record={rel} /> : <span className="text-[var(--text-subtle)]">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-[var(--text-subtle)]">
+                    <td className="px-4 py-3.5 text-[var(--text-subtle)]">
                       {lastRun ? formatRelativeTime(lastRun.startedAt ?? lastRun.createdAt) : '—'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <div className="flex flex-wrap items-center justify-end gap-1.5">
                         {canWrite && <RunTestButton testCase={t} {...(onNavigateToRun ? { onNavigateToRun } : {})} />}
                         <button
                           type="button"
                           onClick={() => setSelectedId(t.id)}
-                          className="inline-flex items-center gap-1 rounded border border-[var(--border)] bg-[var(--surface-elevated)] px-2.5 py-1 text-xs font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                          className="abh-btn abh-btn-ghost abh-btn-sm"
                         >
                           <IconEye size={12} />
                           View
@@ -386,6 +449,7 @@ export function TestsView({
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -405,10 +469,14 @@ export function TestsView({
 
 function EmptyState({
   canWrite,
+  hasApps,
   onGenerate,
+  onAddApp,
 }: {
   canWrite: boolean;
+  hasApps: boolean;
   onGenerate: () => void;
+  onAddApp?: () => void;
 }): JSX.Element {
   if (canWrite) {
     return (
@@ -416,8 +484,20 @@ function EmptyState({
         visualization="nodes"
         accent="violet"
         title="No tests yet"
-        subtitle="Discover an application or generate your first AI-assisted test suite."
+        subtitle={
+          hasApps
+            ? 'Discover an application or generate your first AI-assisted test suite.'
+            : 'Tests are generated from an application. Add one first, then come back here.'
+        }
+        steps={[
+          'Pick an application and a goal: smoke, functional, negative…',
+          'Review the tests the AI proposes and save the good ones.',
+          'Press Run Test and watch the evidence come in.',
+        ]}
         cta={{ label: 'Generate Tests', onClick: onGenerate, icon: <IconSparkles size={14} /> }}
+        {...(onAddApp && !hasApps
+          ? { secondary: { label: 'Add an application', onClick: onAddApp, icon: <IconLayers size={14} /> } }
+          : {})}
       />
     );
   }
@@ -434,7 +514,7 @@ function EmptyState({
 function SourcePill({ isAi }: { isAi: boolean }): JSX.Element {
   if (isAi) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-700">
+      <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-700 shadow-[0_0_14px_-6px_var(--primary)]">
         <IconSparkles size={10} />
         AI Generated
       </span>

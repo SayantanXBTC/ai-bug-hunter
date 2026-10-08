@@ -13,6 +13,9 @@ interface Props {
   title: string;
   subtitle: string;
   cta?: CTA;
+  secondary?: CTA;
+  /** Short "what to do next" steps rendered under the subtitle. */
+  steps?: string[];
   visualization?: Variant;
   accent?: Accent;
 }
@@ -278,25 +281,57 @@ export function OrbitalEmptyState({
   title,
   subtitle,
   cta,
+  secondary,
+  steps,
   visualization = 'planet',
   accent = 'violet',
 }: Props): JSX.Element {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-glass)] p-10 text-center backdrop-blur-md">
-      <div className={ACCENT_TEXT[accent]}>{pickViz(visualization)}</div>
-      <h3 className="mt-4 text-sm font-semibold uppercase tracking-[0.25em] text-[var(--text)]">
+    <div className="abh-card abh-fade-up relative flex flex-col items-center justify-center overflow-hidden border-dashed p-8 text-center sm:p-10">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-24 h-64 w-64 -translate-x-1/2 rounded-full blur-3xl"
+        style={{ background: 'radial-gradient(circle, var(--primary-soft), transparent 70%)' }}
+      />
+      <div className={`abh-float relative ${ACCENT_TEXT[accent]}`}>{pickViz(visualization)}</div>
+      <h3 className="relative mt-2 text-sm font-semibold uppercase tracking-[0.25em] text-[var(--text)]">
         {title}
       </h3>
-      <p className="mt-2 max-w-md text-sm text-[var(--text-muted)]">{subtitle}</p>
-      {cta && (
-        <button
-          type="button"
-          onClick={cta.onClick}
-          className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white shadow-[0_4px_16px_-4px_var(--primary-soft)] transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-        >
-          {cta.icon}
-          {cta.label}
-        </button>
+      <p className="relative mt-2 max-w-md text-sm text-[var(--text-muted)]">{subtitle}</p>
+      {steps && steps.length > 0 && (
+        <ol className="relative mt-6 flex w-full max-w-2xl flex-col gap-2 text-left sm:flex-row">
+          {steps.map((s, i) => (
+            <li
+              key={s}
+              className="abh-fade-up flex flex-1 items-start gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-hover)] p-3"
+              style={{ animationDelay: `${150 + i * 90}ms` }}
+            >
+              <span
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+              >
+                {i + 1}
+              </span>
+              <span className="text-xs leading-snug text-[var(--text-muted)]">{s}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+      {(cta || secondary) && (
+        <div className="relative mt-6 flex flex-wrap items-center justify-center gap-2">
+          {cta && (
+            <button type="button" onClick={cta.onClick} className="abh-btn abh-btn-primary">
+              {cta.icon}
+              {cta.label}
+            </button>
+          )}
+          {secondary && (
+            <button type="button" onClick={secondary.onClick} className="abh-btn abh-btn-ghost">
+              {secondary.icon}
+              {secondary.label}
+            </button>
+          )}
+        </div>
       )}
       <style>{`
         .oe-spin-slow { animation: oeSpin 60s linear infinite; }
