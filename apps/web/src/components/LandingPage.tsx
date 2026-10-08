@@ -176,135 +176,6 @@ function CursorGlow(): JSX.Element {
   );
 }
 
-/** Drifting particle field; links nearby particles and reacts to the cursor. */
-function ParticleField(): JSX.Element {
-  const ref = useRef<HTMLCanvasElement | null>(null);
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas || reduceMotion()) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    let w = 0;
-    let h = 0;
-    const resize = (): void => {
-      w = window.innerWidth;
-      h = window.innerHeight;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-    resize();
-    const count = Math.min(70, Math.round((w * h) / 22000));
-    const pts = Array.from({ length: count }, () => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      vx: (Math.random() - 0.5) * 0.15,
-      vy: -0.08 - Math.random() * 0.22,
-      r: 0.6 + Math.random() * 1.4,
-      a: 0.25 + Math.random() * 0.5,
-    }));
-    const mouse = { x: -9999, y: -9999 };
-    const onMove = (e: MouseEvent): void => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-    };
-    let raf = 0;
-    const tick = (): void => {
-      ctx.clearRect(0, 0, w, h);
-      for (const p of pts) {
-        const dx = p.x - mouse.x;
-        const dy = p.y - mouse.y;
-        const d2 = dx * dx + dy * dy;
-        if (d2 < 14000) {
-          p.x += dx * 0.012;
-          p.y += dy * 0.012;
-        }
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.y < -10) {
-          p.y = h + 10;
-          p.x = Math.random() * w;
-        }
-        if (p.x < -10) p.x = w + 10;
-        if (p.x > w + 10) p.x = -10;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(196,181,253,${p.a})`;
-        ctx.fill();
-      }
-      for (let i = 0; i < pts.length; i++) {
-        for (let j = i + 1; j < pts.length; j++) {
-          const a = pts[i]!;
-          const b = pts[j]!;
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const d = dx * dx + dy * dy;
-          if (d < 9000) {
-            ctx.strokeStyle = `rgba(167,139,250,${0.12 * (1 - d / 9000)})`;
-            ctx.lineWidth = 0.6;
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.stroke();
-          }
-        }
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    window.addEventListener('resize', resize);
-    window.addEventListener('mousemove', onMove);
-    raf = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', resize);
-      window.removeEventListener('mousemove', onMove);
-    };
-  }, []);
-  return <canvas ref={ref} aria-hidden="true" className="pointer-events-none fixed inset-0" style={{ zIndex: 0 }} />;
-}
-
-/** Targeting HUD over the subject on the right: brackets, sweep line, live labels. */
-function ScanHud(): JSX.Element {
-  const LABELS = ['DOM mapped · 142 nodes', 'Selectors ranked', 'Form validation probed', 'Network 200 · 31 req', 'Console clean', 'Anomaly isolated'];
-  const [idx, setIdx] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % LABELS.length), 1800);
-    return () => clearInterval(t);
-  }, [LABELS.length]);
-  const corner = 'absolute h-6 w-6 border-[#c4b5fd]';
-  return (
-    <div
-      aria-hidden="true"
-      className="lp-hud pointer-events-none fixed hidden md:block"
-      style={{ zIndex: 1, left: '56%', top: '23%', width: '24%', height: '44%' }}
-    >
-      <span className={`${corner} left-0 top-0 border-l-2 border-t-2`} />
-      <span className={`${corner} right-0 top-0 border-r-2 border-t-2`} />
-      <span className={`${corner} bottom-0 left-0 border-b-2 border-l-2`} />
-      <span className={`${corner} bottom-0 right-0 border-b-2 border-r-2`} />
-      <div className="absolute inset-0 overflow-hidden">
-        <div
-          className="lp-sweep absolute inset-x-0 h-16"
-          style={{ background: 'linear-gradient(180deg, transparent, rgba(167,139,250,0.22), rgba(196,181,253,0.55) 50%, transparent 52%)' }}
-        />
-      </div>
-      <div className="absolute -top-7 left-0 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-[#c4b5fd]">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#a78bfa]" /> target · scanning
-      </div>
-      <div
-        key={idx}
-        className="lp-label absolute -bottom-8 right-0 rounded-full border border-white/15 bg-black/40 px-3 py-1 font-mono text-[10px] text-white/80 backdrop-blur-md"
-      >
-        <span className="mr-1.5 text-[#86efac]">✓</span>
-        {LABELS[idx]}
-      </div>
-    </div>
-  );
-}
-
 const PIPELINE = ['Discover', 'Generate', 'Execute', 'Investigate', 'Cluster'];
 
 /** Five-stage pipeline that lights up in sequence, with a travelling pulse. */
@@ -490,10 +361,10 @@ function Wordmark({ visible }: { visible: boolean }): JSX.Element {
   );
 }
 
-function TopNav({ isAuthenticated, onCta, visible }: { isAuthenticated: boolean; onCta: () => void; visible: boolean }): JSX.Element {
+function TopNav({ visible }: { visible: boolean }): JSX.Element {
   return (
     <nav
-      className="fixed inset-x-0 top-0 z-20 flex items-center justify-between px-6 py-5 transition-all duration-700 sm:px-10 md:px-16"
+      className="fixed inset-x-0 top-0 z-20 flex items-center px-6 py-5 transition-all duration-700 sm:px-10 md:px-16"
       style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(-10px)' }}
     >
       <div className="flex items-center gap-2.5 text-sm text-white/85">
@@ -503,13 +374,6 @@ function TopNav({ isAuthenticated, onCta, visible }: { isAuthenticated: boolean;
         </svg>
         <span className="tracking-[0.18em] uppercase text-[11px]">Autonomous QA</span>
       </div>
-      <button
-        type="button"
-        onClick={onCta}
-        className="rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-[13px] text-white/85 backdrop-blur-md transition-all hover:border-white/35 hover:bg-white/10 hover:text-white"
-      >
-        {isAuthenticated ? 'Open dashboard' : 'Sign in'}
-      </button>
     </nav>
   );
 }
@@ -543,7 +407,7 @@ function Hero({
 
   return (
     <>
-      <TopNav isAuthenticated={isAuthenticated} onCta={onCta} visible={visible} />
+      <TopNav visible={visible} />
       <section className="relative z-[1] flex h-screen items-center overflow-hidden px-6 sm:px-10 md:px-16">
         <div className="relative z-10 max-w-2xl">
           <Wordmark visible={visible} />
@@ -592,9 +456,7 @@ export function LandingPage({ isAuthenticated, onCta }: Props): JSX.Element {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#04040a] text-white">
       <BackgroundVideo />
-      <ParticleField />
       <CursorGlow />
-      <ScanHud />
       <Hero isAuthenticated={isAuthenticated} onCta={onCta} />
       {/* Bottom vignette rule */}
       <div
@@ -607,12 +469,6 @@ export function LandingPage({ isAuthenticated, onCta }: Props): JSX.Element {
         .lp-star:hover { animation-duration: 1.2s; }
         .lp-spin { animation: lpSpin 20s linear infinite; }
         @keyframes lpSpin { to { transform: rotate(360deg); } }
-        .lp-sweep { animation: lpSweep 3.2s cubic-bezier(.45,.05,.55,.95) infinite; }
-        @keyframes lpSweep { 0% { top: -20%; } 100% { top: 105%; } }
-        .lp-hud { animation: lpHudIn 1.2s ease 1.2s both; }
-        @keyframes lpHudIn { from { opacity: 0; transform: scale(1.06); } to { opacity: 0.9; transform: scale(1); } }
-        .lp-label { animation: lpLabel 0.45s ease both; }
-        @keyframes lpLabel { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .lp-travel { animation: lpTravel 1.4s linear infinite; }
         @keyframes lpTravel { from { left: -30%; } to { left: 100%; } }
         .lp-halo { animation: lpHalo 2.8s ease-out infinite; }
@@ -620,7 +476,7 @@ export function LandingPage({ isAuthenticated, onCta }: Props): JSX.Element {
         .lp-ripple { width: 12px; height: 12px; margin: -6px 0 0 -6px; animation: lpRipple 0.65s ease-out forwards; }
         @keyframes lpRipple { to { transform: scale(26); opacity: 0; } }
         @media (prefers-reduced-motion: reduce) {
-          .lp-star, .lp-spin, .lp-sweep, .lp-halo, .lp-travel { animation: none !important; }
+          .lp-star, .lp-spin, .lp-halo, .lp-travel { animation: none !important; }
         }
       `}</style>
     </div>

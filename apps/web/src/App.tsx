@@ -16,19 +16,18 @@ import { PageAmbient } from './components/shared/PageAmbient.js';
 import { TopBar } from './components/shared/TopBar.js';
 import { CommandPalette } from './components/shared/CommandPalette.js';
 import { WelcomeTour } from './components/shared/WelcomeTour.js';
+import { PageErrorBoundary } from './components/shared/PageErrorBoundary.js';
 import type { PageAction, ViewId } from './components/navigation.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useTheme } from './lib/theme.js';
 import { useStoredFlag } from './lib/motion.js';
+import { useHashRoute } from './lib/router.js';
 
 export function App(): JSX.Element {
   const auth = useAuth();
   // Ensure the theme attribute is applied globally.
   const { toggle: toggleTheme } = useTheme();
-  const [view, setView] = useState<ViewId>('dashboard');
-  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
-  const [showLogin, setShowLogin] = useState(false);
-  const [entered, setEntered] = useState(false);
+  const { route, navigate } = useHashRoute();
   const [pendingAction, setPendingAction] = useState<PageAction | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
@@ -36,13 +35,18 @@ export function App(): JSX.Element {
   const [collapsed, setCollapsed] = useStoredFlag('abh-sidebar-collapsed', false);
   const [tourSeen, setTourSeen] = useStoredFlag('abh-tour-seen', false);
 
-  // Reset gate on logout so the user returns to the landing page.
+  const entered = route.screen === 'app';
+  const view: ViewId = route.screen === 'app' ? route.view : 'dashboard';
+  const detailId = route.screen === 'app' ? route.id : null;
+
+  // Guard routes against auth state: app pages need a session, the login
+  // page does not make sense with one. `replace` keeps Back history clean.
   useEffect(() => {
-    if (!auth.user) {
-      setEntered(false);
-      setShowLogin(false);
-    }
-  }, [auth.user]);
+    if (auth.loading) return;
+    if (route.screen === 'app' && !auth.user) navigate({ screen: 'landing' }, { replace: true });
+    if (route.screen === 'login' && auth.user)
+      navigate({ screen: 'app', view: 'dashboard', id: null }, { replace: true });
+  }, [auth.loading, auth.user, route.screen, navigate]);
 
   // First visit after sign-in: show the quick start guide once.
   useEffect(() => {
@@ -66,14 +70,33 @@ export function App(): JSX.Element {
     return () => window.removeEventListener('keydown', onKey);
   }, [entered]);
 
-  const go = useCallback((next: ViewId, action?: PageAction) => {
-    if (next === 'test-runs') setSelectedRunId(null);
-    setView(next);
-    setPendingAction(action ?? null);
+  // Close overlays when the user goes Back/Forward.
+  useEffect(() => {
+    setMobileNavOpen(false);
+    setPaletteOpen(false);
     window.scrollTo({ top: 0 });
-  }, []);
+  }, [route]);
+
+  const go = useCallback(
+    (next: ViewId, action?: PageAction) => {
+      setPendingAction(action ?? null);
+      navigate({ screen: 'app', view: next, id: null });
+    },
+    [navigate],
+  );
+
+  /** Open or close a detail inside the current page (adds a Back step). */
+  const openDetail = useCallback(
+    (v: ViewId, id: string | null) => navigate({ screen: 'app', view: v, id }),
+    [navigate],
+  );
 
   const consumeAction = useCallback(() => setPendingAction(null), []);
+
+  const logout = useCallback(async () => {
+    await auth.logout();
+    navigate({ screen: 'landing' }, { replace: true });
+  }, [auth, navigate]);
 
   const closeTour = useCallback(() => {
     setTourOpen(false);
@@ -83,43 +106,41 @@ export function App(): JSX.Element {
   if (auth.loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--bg)]">
-        <div className="flex flex-col items-center gap-4">
-          <span
-            className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--border)]"
-            style={{ borderTopColor: 'var(--primary)' }}
-          />
-          <span className="text-xs uppercase tracking-[0.3em] text-[var(--text-subtle)]">Loading</span>
-        </div>
+        <span
+          className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--border)]"
+          style={{ borderTopColor: 'var(--primary)' }}
+        />
       </div>
     );
   }
 
-  if (!entered) {
-    if (showLogin && !auth.user) {
-      return (
-        <LoginView
-          onAuthenticated={() => {
-            void auth.refresh();
-            setShowLogin(false);
-            setEntered(true);
-          }}
-        />
-      );
-    }
+  if (route.screen === 'login' && !auth.user) {
     return (
-      <LandingPage
-        isAuthenticated={!!auth.user}
-        onCta={() => {
-          if (auth.user) setEntered(true);
-          else setShowLogin(true);
+      <LoginView
+        onAuthenticated={() => {
+          // Wait for the session before switching, or the route guard would
+          // see "no user" and bounce back. Replace the login entry so Back
+          // from the dashboard goes to the landing page.
+          void auth
+            .refresh()
+            .then(() =>
+              navigate({ screen: 'app', view: 'dashboard', id: null }, { replace: true }),
+            );
         }}
       />
     );
   }
 
-  if (!auth.user) {
-    // Effect above will reset `entered`; render placeholder during transition.
-    return <div className="min-h-screen bg-[var(--bg)]" />;
+  if (!entered || !auth.user) {
+    return (
+      <LandingPage
+        isAuthenticated={!!auth.user}
+        onCta={() => {
+          if (auth.user) navigate({ screen: 'app', view: 'dashboard', id: null });
+          else navigate({ screen: 'login' });
+        }}
+      />
+    );
   }
 
   const role = auth.user.role;
@@ -137,97 +158,101 @@ export function App(): JSX.Element {
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
         onOpenTour={() => setTourOpen(true)}
-        onOpenPalette={() => setPaletteOpen(true)}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
           user={auth.user}
           view={view}
-          onLogout={() => void auth.logout()}
+          onLogout={() => void logout()}
           onOpenPalette={() => setPaletteOpen(true)}
           onOpenTour={() => setTourOpen(true)}
           onOpenMobileNav={() => setMobileNavOpen(true)}
           onNavigate={(v, id) => {
             if (v === 'test-runs' && id) {
-              setSelectedRunId(id);
-              setView('test-runs');
+              openDetail('test-runs', id);
               return;
             }
             go(v as ViewId);
           }}
         />
         <main className="min-w-0 flex-1 overflow-x-clip">
-          <div key={view} className="abh-fade-up">
-            {view === 'dashboard' && (
-              <PageShell>
-                <Dashboard onNavigate={(t, action) => go(t, action)} />
-              </PageShell>
-            )}
-            {view === 'applications' && (
-              <PageShell>
-                <ApplicationsView
-                  role={role}
-                  onNavigateToTests={() => go('tests')}
-                  openAddOnMount={pendingAction === 'add-application'}
-                  onActionConsumed={consumeAction}
-                />
-              </PageShell>
-            )}
-            {view === 'tests' && (
-              <PageShell>
-                <TestsView
-                  role={role}
-                  onNavigateToRun={(runId) => {
-                    setSelectedRunId(runId);
-                    setView('test-runs');
-                  }}
-                  onNavigateToApplications={() => go('applications')}
-                  openGenerateOnMount={pendingAction === 'generate-tests'}
-                  onActionConsumed={consumeAction}
-                />
-              </PageShell>
-            )}
-            {view === 'test-runs' && (
-              <PageShell>
-                {selectedRunId ? (
-                  <TestRunDetail id={selectedRunId} onClose={() => setSelectedRunId(null)} />
-                ) : (
-                  <TestRunList onSelect={setSelectedRunId} onNavigateToTests={canWrite ? () => go('tests') : undefined} />
-                )}
-              </PageShell>
-            )}
-            {view === 'bugs' && (
-              <PageShell>
-                <BugIntelligence
-                  analyzeOnMount={pendingAction === 'analyze-bugs'}
-                  onActionConsumed={consumeAction}
-                  onNavigateToRuns={() => go('test-runs')}
-                />
-              </PageShell>
-            )}
-            {view === 'reliability' && (
-              <PageShell>
-                <TestReliability onNavigateToTests={canWrite ? () => go('tests') : undefined} />
-              </PageShell>
-            )}
-            {view === 'regression' && (
-              <PageShell>
-                <RegressionCampaigns
-                  openCreateOnMount={pendingAction === 'create-campaign'}
-                  onActionConsumed={consumeAction}
-                />
-              </PageShell>
-            )}
-            {view === 'settings' && (
-              <PageShell>
-                <SettingsView
-                  user={auth.user}
-                  onLogout={() => void auth.logout()}
-                  onOpenTour={() => setTourOpen(true)}
-                />
-              </PageShell>
-            )}
-          </div>
+          <PageErrorBoundary key={`${view}/${detailId ?? ''}`}>
+            <div key={view} className="abh-fade-up">
+              {view === 'dashboard' && (
+                <PageShell>
+                  <Dashboard onNavigate={(t, action) => go(t, action)} />
+                </PageShell>
+              )}
+              {view === 'applications' && (
+                <PageShell>
+                  <ApplicationsView
+                    role={role}
+                    onNavigateToTests={() => go('tests')}
+                    openAddOnMount={pendingAction === 'add-application'}
+                    onActionConsumed={consumeAction}
+                    detailId={detailId}
+                    onDetailChange={(id) => openDetail('applications', id)}
+                  />
+                </PageShell>
+              )}
+              {view === 'tests' && (
+                <PageShell>
+                  <TestsView
+                    role={role}
+                    onNavigateToRun={(runId) => openDetail('test-runs', runId)}
+                    onNavigateToApplications={() => go('applications')}
+                    openGenerateOnMount={pendingAction === 'generate-tests'}
+                    onActionConsumed={consumeAction}
+                    detailId={detailId}
+                    onDetailChange={(id) => openDetail('tests', id)}
+                  />
+                </PageShell>
+              )}
+              {view === 'test-runs' && (
+                <PageShell>
+                  {detailId ? (
+                    <TestRunDetail id={detailId} onClose={() => openDetail('test-runs', null)} />
+                  ) : (
+                    <TestRunList
+                      onSelect={(id) => openDetail('test-runs', id)}
+                      onNavigateToTests={canWrite ? () => go('tests') : undefined}
+                    />
+                  )}
+                </PageShell>
+              )}
+              {view === 'bugs' && (
+                <PageShell>
+                  <BugIntelligence
+                    analyzeOnMount={pendingAction === 'analyze-bugs'}
+                    onActionConsumed={consumeAction}
+                    onNavigateToRuns={() => go('test-runs')}
+                  />
+                </PageShell>
+              )}
+              {view === 'reliability' && (
+                <PageShell>
+                  <TestReliability onNavigateToTests={canWrite ? () => go('tests') : undefined} />
+                </PageShell>
+              )}
+              {view === 'regression' && (
+                <PageShell>
+                  <RegressionCampaigns
+                    openCreateOnMount={pendingAction === 'create-campaign'}
+                    onActionConsumed={consumeAction}
+                  />
+                </PageShell>
+              )}
+              {view === 'settings' && (
+                <PageShell>
+                  <SettingsView
+                    user={auth.user}
+                    onLogout={() => void logout()}
+                    onOpenTour={() => setTourOpen(true)}
+                  />
+                </PageShell>
+              )}
+            </div>
+          </PageErrorBoundary>
         </main>
       </div>
 
@@ -238,7 +263,7 @@ export function App(): JSX.Element {
         onNavigate={go}
         onToggleTheme={toggleTheme}
         onOpenTour={() => setTourOpen(true)}
-        onLogout={() => void auth.logout()}
+        onLogout={() => void logout()}
       />
       <WelcomeTour open={tourOpen} canWrite={canWrite} onClose={closeTour} onGo={go} />
     </div>

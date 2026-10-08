@@ -36,6 +36,7 @@ export function QualityScoreCard({ quality, insufficient }: QualityScoreCardProp
   const animated = useCountUp(clamped, 1400);
   const dash = (animated / 100) * circumference;
   const [hover, setHover] = useState<string | null>(null);
+  const [showWhy, setShowWhy] = useState(false);
 
   const breakdown = quality?.breakdown as Partial<QualityScoreBreakdown> | undefined;
   const rows = COMPONENTS.filter((c) => breakdown?.[c.key]);
@@ -141,10 +142,18 @@ export function QualityScoreCard({ quality, insufficient }: QualityScoreCardProp
       </div>
 
       {hasData && rows.length > 0 && (
-        <div className="relative mt-6 space-y-2.5 border-t border-[var(--border)] pt-4">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-subtle)]">
-            What drives the score
-          </div>
+        <button
+          type="button"
+          onClick={() => setShowWhy((v) => !v)}
+          aria-expanded={showWhy}
+          className="relative mt-5 flex items-center gap-1.5 self-start text-xs text-[var(--text-subtle)] transition-colors hover:text-[var(--text)]"
+        >
+          <span className={`inline-block transition-transform duration-300 ${showWhy ? 'rotate-90' : ''}`}>›</span>
+          Why this score?
+        </button>
+      )}
+      {hasData && rows.length > 0 && showWhy && (
+        <div className="abh-fade-up relative mt-3 space-y-2.5 border-t border-[var(--border)] pt-4">
           {rows.map((c, i) => {
             const comp = breakdown![c.key]!;
             const v = comp.weightedContribution;

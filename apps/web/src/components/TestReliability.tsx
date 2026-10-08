@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from './shared/PageHeader.js';
-import { MetricPanel } from './shared/MetricPanel.js';
 import { StatusPill, type PillTone } from './shared/StatusPill.js';
 import { IconRefresh, IconSpinner, IconRadar, IconSparkles } from './icons.js';
 import { entryFor } from './navigation.js';
@@ -186,14 +185,6 @@ export function TestReliability({ onNavigateToTests }: TestReliabilityProps = {}
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <MetricPanel index={0} label="Stable" value={counts.stable} hint={HINTS.stable} accent="emerald" onClick={() => toggle('stable')} active={filter === 'stable'} />
-        <MetricPanel index={1} label="Suspected Flaky" value={counts.suspected_flaky} hint={HINTS.suspected_flaky} accent="orange" onClick={() => toggle('suspected_flaky')} active={filter === 'suspected_flaky'} />
-        <MetricPanel index={2} label="Flaky" value={counts.flaky} hint={HINTS.flaky} accent="red" onClick={() => toggle('flaky')} active={filter === 'flaky'} />
-        <MetricPanel index={3} label="Unstable" value={counts.unstable} hint={HINTS.unstable} accent="orange" onClick={() => toggle('unstable')} active={filter === 'unstable'} />
-        <MetricPanel index={4} label="Insufficient" value={counts.insufficient_data} hint={HINTS.insufficient_data} accent="neutral" onClick={() => toggle('insufficient_data')} active={filter === 'insufficient_data'} />
-      </div>
-
       {total > 0 && (
         <div className="abh-card flex flex-wrap items-center gap-6 p-5">
           <Donut counts={counts} total={total} />
@@ -206,6 +197,8 @@ export function TestReliability({ onNavigateToTests }: TestReliabilityProps = {}
                 key={st}
                 type="button"
                 onClick={() => toggle(st)}
+                title={HINTS[st]}
+                aria-pressed={filter === st}
                 className={`group flex w-full items-center gap-3 rounded-lg px-2 py-1 text-left transition-colors hover:bg-[var(--surface-hover)] ${filter === st ? 'bg-[var(--surface-hover)]' : ''}`}
               >
                 <span className="h-2.5 w-2.5 rounded-sm" style={{ background: STATUS_COLOR[st] }} />
@@ -362,17 +355,6 @@ function ReliabilityCard({ r }: { r: Reliability }): JSX.Element {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {(r.recentRuns?.length ?? 0) > 0 && (
-            <div className="hidden items-center gap-0.5 sm:flex" aria-hidden>
-              {(r.recentRuns ?? []).slice(0, 10).map((run, i) => (
-                <span
-                  key={i}
-                  className="h-4 w-1.5 rounded-full"
-                  style={{ background: run.status === 'passed' ? 'var(--success)' : run.status === 'failed' || run.status === 'error' ? 'var(--danger)' : 'var(--text-subtle)' }}
-                />
-              ))}
-            </div>
-          )}
           <StatusPill tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</StatusPill>
         </div>
       </div>

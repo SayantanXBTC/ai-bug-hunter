@@ -41,7 +41,7 @@ export function MetricCard({
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-[0.12] blur-2xl transition-opacity duration-300 group-hover:opacity-30"
+        className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-20"
         style={{ background: color }}
       />
       <div className="relative flex items-center justify-between gap-2">

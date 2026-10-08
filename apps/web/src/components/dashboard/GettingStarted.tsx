@@ -79,12 +79,7 @@ export function GettingStarted({ state, canWrite, onGo }: Props): JSX.Element | 
   const pct = doneCount / steps.length;
 
   return (
-    <section className="abh-card abh-glow-border abh-fade-up relative overflow-hidden p-5 sm:p-6">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full blur-3xl"
-        style={{ background: 'var(--secondary)', opacity: 0.1 }}
-      />
+    <section className="abh-card abh-fade-up relative overflow-hidden p-5 sm:p-6">
       <div className="relative flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[var(--primary-strong)]">

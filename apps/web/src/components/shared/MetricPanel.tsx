@@ -64,7 +64,7 @@ export function MetricPanel({
       {/* Accent glow in the corner */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-40"
+        className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-25"
         style={{ background: color }}
       />
       <div className="relative flex items-center justify-between gap-2">

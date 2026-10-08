@@ -106,7 +106,7 @@ export function TopBar({
 
   return (
     <header
-      className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-[var(--border)] px-4 backdrop-blur-xl sm:px-6"
+      className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-[var(--border)] px-4 backdrop-blur-xl sm:px-6"
       style={{ background: 'var(--surface-glass)' }}
     >
       <div
@@ -115,7 +115,7 @@ export function TopBar({
         style={{
           background:
             'linear-gradient(90deg, transparent 0%, var(--primary) 40%, var(--secondary) 60%, transparent 100%)',
-          opacity: 0.3,
+          opacity: 0.15,
         }}
       />
 
@@ -138,7 +138,6 @@ export function TopBar({
               {entry.label}
             </li>
           </ol>
-          <div className="hidden truncate text-[11px] text-[var(--text-subtle)] md:block">{entry.guide.summary}</div>
         </nav>
       </div>
 

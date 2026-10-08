@@ -12,7 +12,6 @@ import {
   IconExternalLink,
   IconSearch,
 } from '../icons.js';
-import { MetricPanel } from '../shared/MetricPanel.js';
 import { entryFor } from '../navigation.js';
 import { useSpotlight } from '../../lib/motion.js';
 import { formatRelativeTime } from '../../lib/format.js';
@@ -31,6 +30,9 @@ interface ApplicationsViewProps {
   /** Open the "Add application" modal on arrival (quick action / command palette). */
   openAddOnMount?: boolean;
   onActionConsumed?: () => void;
+  /** Controlled detail selection (lets the browser Back button close the detail). */
+  detailId?: string | null;
+  onDetailChange?: (id: string | null) => void;
 }
 
 interface ListState {
@@ -46,27 +48,24 @@ interface AppMetrics {
   lastRunStatus: string | null;
 }
 
-interface OverviewLite {
-  applications?: { count: number };
-  testRuns?: { totalRecent: number; passed: number; failed: number };
-  qualityScore?: { score: number; sampleSize: number } | null;
-}
-
 export function ApplicationsView({
   role,
   onNavigateToTests,
   openAddOnMount = false,
   onActionConsumed,
+  detailId,
+  onDetailChange,
 }: ApplicationsViewProps): JSX.Element {
   const canWrite = role === 'admin' || role === 'qa_engineer';
   const [state, setState] = useState<ListState>({ items: null, loading: true, error: null });
   const [refreshTick, setRefreshTick] = useState(0);
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [localSelectedId, setLocalSelectedId] = useState<string | null>(null);
+  const selectedId = detailId !== undefined ? detailId : localSelectedId;
+  const setSelectedId = onDetailChange ?? setLocalSelectedId;
   const [discoverForId, setDiscoverForId] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<Record<string, AppMetrics>>({});
-  const [overview, setOverview] = useState<OverviewLite | null>(null);
 
   useEffect(() => {
     if (!openAddOnMount) return;
@@ -105,23 +104,6 @@ export function ApplicationsView({
   useEffect(() => {
     void fetchList();
   }, [fetchList, refreshTick]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch('/api/dashboard/overview', { credentials: 'include' });
-        if (!res.ok) return;
-        const body = (await res.json()) as OverviewLite;
-        if (!cancelled) setOverview(body);
-      } catch {
-        // ignore
-      }
-    })().catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshTick]);
 
   useEffect(() => {
     let cancelled = false;
@@ -185,17 +167,6 @@ export function ApplicationsView({
     );
   }
 
-  const totalTests = Object.values(metrics).reduce(
-    (acc, m) => acc + (m?.testCount ?? 0),
-    0,
-  );
-  const runs = overview?.testRuns;
-  const failuresRecent = runs && typeof runs.failed === 'number' ? runs.failed : null;
-  const avgQuality =
-    overview?.qualityScore && overview.qualityScore.sampleSize > 0
-      ? overview.qualityScore.score
-      : null;
-
   const guide = entryFor('applications').guide;
 
   return (
@@ -227,13 +198,6 @@ export function ApplicationsView({
         }
       />
 
-      <MetricStrip
-        appsCount={overview?.applications?.count ?? items.length}
-        activeCount={items.length}
-        testsCount={totalTests}
-        failures={failuresRecent}
-        quality={avgQuality}
-      />
 
       {items.length > 3 && (
         <div className="relative max-w-sm">
@@ -319,30 +283,6 @@ export function ApplicationsView({
           onGenerateTests={() => onNavigateToTests(discoverTarget.id)}
         />
       )}
-    </div>
-  );
-}
-
-function MetricStrip({
-  appsCount,
-  activeCount,
-  testsCount,
-  failures,
-  quality,
-}: {
-  appsCount: number;
-  activeCount: number;
-  testsCount: number;
-  failures: number | null;
-  quality: number | null;
-}): JSX.Element {
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      <MetricPanel index={0} label="Applications" value={appsCount} accent="violet" />
-      <MetricPanel index={1} label="Active" value={activeCount} accent="cyan" />
-      <MetricPanel index={2} label="Tests" value={testsCount} accent="emerald" />
-      <MetricPanel index={3} label="Recent Failures" value={failures === null ? '—' : failures} accent="red" />
-      <MetricPanel index={4} label="Avg Quality" value={quality === null ? '—' : quality} accent="orange" />
     </div>
   );
 }

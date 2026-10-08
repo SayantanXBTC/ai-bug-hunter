@@ -30,31 +30,24 @@ export function PageHeader({
   guide,
   guideKey,
 }: Props): JSX.Element {
-  const [guideOpen, setGuideOpen] = useStoredFlag(`abh-guide-${guideKey ?? title}`, true);
+  // Closed by default to keep pages calm; the "How it works" button opens it.
+  const [guideOpen, setGuideOpen] = useStoredFlag(`abh-guide-v2-${guideKey ?? title}`, false);
 
   return (
     <div className="space-y-4">
-      <header className="abh-fade-up flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <header className="abh-fade-up flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-start gap-4">
           {icon && (
-            <div className="relative hidden shrink-0 sm:block">
-              <div
-                aria-hidden
-                className="absolute inset-0 rounded-2xl blur-xl"
-                style={{ background: 'radial-gradient(circle, var(--primary) 0%, transparent 70%)', opacity: 0.35 }}
-              />
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-elevated)] text-[var(--primary-strong)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                {icon}
-              </div>
+            <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--primary-strong)] sm:flex">
+              {icon}
             </div>
           )}
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.28em] text-[var(--text-subtle)]">
-              <span aria-hidden className="h-px w-5 bg-gradient-to-r from-transparent to-[var(--primary)]" />
+            <div className="text-[10px] font-medium uppercase tracking-[0.24em] text-[var(--text-subtle)]">
               {eyebrow}
             </div>
             <h1
-              className="abh-gradient-text mt-1.5 text-[28px] leading-tight tracking-tight"
+              className="mt-1 text-[26px] leading-tight tracking-tight text-[var(--text)]"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {title}
@@ -72,9 +65,10 @@ export function PageHeader({
                 onClick={() => setGuideOpen(true)}
                 className="abh-btn abh-btn-ghost"
                 title="Show how this page works"
+                aria-label="How it works"
               >
                 <IconHelp size={14} />
-                How it works
+                <span className="hidden md:inline">How it works</span>
               </button>
             )}
             {actions}
@@ -82,15 +76,6 @@ export function PageHeader({
         )}
       </header>
       {guide && guideOpen && <GuidePanel guide={guide} onClose={() => setGuideOpen(false)} />}
-      <div
-        aria-hidden
-        className="h-px w-full"
-        style={{
-          background:
-            'linear-gradient(90deg, var(--primary) 0%, var(--secondary) 18%, var(--border) 40%, transparent 100%)',
-          opacity: 0.6,
-        }}
-      />
     </div>
   );
 }
@@ -100,7 +85,7 @@ function GuidePanel({ guide, onClose }: { guide: PageGuide; onClose: () => void 
   return (
     <section
       aria-label="How this page works"
-      className="abh-card abh-fade-up abh-glow-border overflow-hidden p-4 sm:p-5"
+      className="abh-card abh-fade-up overflow-hidden p-4 sm:p-5"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
@@ -124,8 +109,8 @@ function GuidePanel({ guide, onClose }: { guide: PageGuide; onClose: () => void 
             key={i}
             onMouseEnter={() => setHovered(i)}
             onMouseLeave={() => setHovered(null)}
-            className="relative flex gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-hover)] p-3 transition-colors"
-            style={hovered === i ? { borderColor: 'var(--border-strong)' } : undefined}
+            className="relative flex gap-3 rounded-xl p-2 transition-colors"
+            style={hovered === i ? { background: 'var(--surface-hover)' } : undefined}
           >
             <span
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"

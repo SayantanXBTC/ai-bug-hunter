@@ -10,7 +10,6 @@ import {
   IconSearch,
   IconLayers,
 } from '../icons.js';
-import { MetricPanel } from '../shared/MetricPanel.js';
 import { entryFor } from '../navigation.js';
 import { OrbitalEmptyState } from '../shared/OrbitalEmptyState.js';
 import { ThemedPageHeader } from '../shared/ThemedPageHeader.js';
@@ -36,6 +35,9 @@ interface TestsViewProps {
   /** Open the generate modal on arrival (quick action / command palette). */
   openGenerateOnMount?: boolean;
   onActionConsumed?: () => void;
+  /** Controlled detail selection (lets the browser Back button close the detail). */
+  detailId?: string | null;
+  onDetailChange?: (id: string | null) => void;
 }
 
 interface ListState {
@@ -54,11 +56,15 @@ export function TestsView({
   onNavigateToApplications,
   openGenerateOnMount = false,
   onActionConsumed,
+  detailId,
+  onDetailChange,
 }: TestsViewProps): JSX.Element {
   const canWrite = role === 'admin' || role === 'qa_engineer';
   const [state, setState] = useState<ListState>({ loading: true, error: null, items: null });
   const [apps, setApps] = useState<ApplicationOption[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [localSelectedId, setLocalSelectedId] = useState<string | null>(null);
+  const selectedId = detailId !== undefined ? detailId : localSelectedId;
+  const setSelectedId = onDetailChange ?? setLocalSelectedId;
   const [tick, setTick] = useState(0);
   const [generateOpen, setGenerateOpen] = useState(false);
 
@@ -220,17 +226,6 @@ export function TestsView({
     );
   }
 
-  const aiCount = items.filter((t) => sourceOfTestCase(t) === 'ai').length;
-  const enabledCount = items.filter((t) => t.enabled).length;
-  const withRuns = items.filter((t) => {
-    const ext = t.external_test_id ?? t.definition.id;
-    return ext ? Boolean(runByExternalId[ext]) : false;
-  });
-  const passingCount = withRuns.filter((t) => {
-    const ext = t.external_test_id ?? t.definition.id;
-    return ext ? runByExternalId[ext]?.status === 'passed' : false;
-  }).length;
-
   return (
     <div className="space-y-6">
       <ThemedPageHeader
@@ -259,21 +254,6 @@ export function TestsView({
           </>
         }
       />
-
-      {items.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <MetricPanel index={0} label="Total tests" value={items.length} accent="violet" />
-          <MetricPanel index={1} label="AI-written" value={aiCount} accent="cyan" />
-          <MetricPanel index={2} label="Enabled" value={enabledCount} accent="emerald" />
-          <MetricPanel
-            index={3}
-            label="Passing last run"
-            value={withRuns.length === 0 ? '—' : `${passingCount}/${withRuns.length}`}
-            hint={withRuns.length === 0 ? 'Run a test to see results' : undefined}
-            accent="orange"
-          />
-        </div>
-      )}
 
       <div className="abh-card flex flex-wrap items-center gap-2 p-3">
         <label className="sr-only" htmlFor="test-search">

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PageHeader } from './shared/PageHeader.js';
-import { MetricPanel } from './shared/MetricPanel.js';
 import { StatusPill, type PillTone } from './shared/StatusPill.js';
 import { IconSparkles, IconSpinner, IconXMark, IconExternalLink, IconBug, IconList } from './icons.js';
 import { entryFor } from './navigation.js';
@@ -97,12 +96,6 @@ interface BugIntelligenceProps {
   onNavigateToRuns?: () => void;
 }
 
-const PIPELINE = [
-  { label: 'Fingerprint', desc: 'Normalize each failure into a signature' },
-  { label: 'Compare', desc: 'Score similarity between failure pairs' },
-  { label: 'Cluster', desc: 'Union strongly-related failures' },
-  { label: 'AI review', desc: 'Ask the model only about ambiguous pairs' },
-];
 
 export function BugIntelligence({
   analyzeOnMount = false,
@@ -200,85 +193,58 @@ export function BugIntelligence({
         </div>
       )}
 
-      {/* Engine + pipeline */}
-      <div className="abh-card abh-glow-border relative overflow-hidden p-5">
+      <div className="abh-card relative flex flex-wrap items-center justify-between gap-x-6 gap-y-3 overflow-hidden px-4 py-3">
         {analyzing && (
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0"
+            className="pointer-events-none absolute inset-y-0 w-1/3"
             style={{
-              background: 'linear-gradient(180deg, transparent, var(--primary-soft), transparent)',
-              animation: 'abhScan 1.6s linear infinite',
+              background: 'linear-gradient(90deg, transparent, var(--primary-soft), transparent)',
+              animation: 'abhTravel 1.4s linear infinite',
             }}
           />
         )}
-        <div className="relative flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.25em] text-violet-300">
-            <IconSparkles size={12} className={analyzing ? 'abh-spin-slow' : ''} /> AI INVESTIGATION ENGINE
-            {analyzing && <span className="rounded-full bg-[var(--primary-soft)] px-2 py-0.5 normal-case tracking-normal text-[var(--primary-strong)]">running…</span>}
-          </div>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
-            <MetaCell label="Provider" value={aiMeta?.provider ?? '—'} />
-            <MetaCell label="Model" value={aiMeta?.model ?? '—'} />
-            <MetaCell
-              label="Investigations"
-              value={aiMeta?.requestCount !== undefined ? String(aiMeta.requestCount) : '—'}
-            />
-            <MetaCell label="Clusters Analyzed" value={clusters ? String(clusters.length) : '—'} />
-          </dl>
-        </div>
-        <ol className="relative mt-5 grid gap-3 sm:grid-cols-4">
-          {PIPELINE.map((p, i) => (
-            <li key={p.label} className="relative rounded-xl border border-[var(--border)] bg-[var(--surface-hover)] p-3">
-              {i < PIPELINE.length - 1 && (
-                <span aria-hidden className="absolute -right-3 top-1/2 z-10 hidden h-px w-3 overflow-hidden bg-[var(--border-strong)] sm:block">
-                  {analyzing && (
-                    <span
-                      className="absolute top-0 h-px w-2 bg-[var(--secondary)]"
-                      style={{ animation: `abhTravel 1s linear infinite ${i * 0.25}s` }}
-                    />
-                  )}
-                </span>
-              )}
-              <div className="flex items-center gap-2">
-                <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold text-white ${analyzing ? 'abh-pulse-ring' : ''}`}
-                  style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', animationDelay: `${i * 0.3}s` }}
-                >
-                  {i + 1}
-                </span>
-                <span className="text-xs font-medium text-[var(--text)]">{p.label}</span>
-              </div>
-              <p className="mt-1.5 text-[11px] leading-snug text-[var(--text-subtle)]">{p.desc}</p>
-            </li>
+        <div role="group" aria-label="Filter by status" className="relative flex flex-wrap items-center gap-1.5">
+          <button type="button" aria-pressed={statusFilter === null} onClick={() => setStatusFilter(null)} className="abh-chip">
+            All <span className="tabular-nums text-[var(--text-subtle)]">{clusters?.length ?? 0}</span>
+          </button>
+          {(
+            [
+              ['open', 'Open', '#f59e0b'],
+              ['regressed', 'Regressed', '#ef4444'],
+              ['recurring', 'Recurring', '#f97316'],
+              ['resolved', 'Resolved', '#10b981'],
+              ['inconclusive', 'Inconclusive', '#64748b'],
+            ] as const
+          ).map(([key, label, color]) => (
+            <button key={key} type="button" aria-pressed={statusFilter === key} onClick={() => toggle(key)} className="abh-chip">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+              {label}
+              <span className="tabular-nums text-[var(--text-subtle)]">{counts[key] ?? 0}</span>
+            </button>
           ))}
-        </ol>
-        {summary && (
-          <div className="abh-fade-up relative mt-4 flex flex-wrap gap-2 text-[11px]">
-            {[
-              [summary.analyzedRuns, 'runs analyzed'],
-              [summary.candidatePairs, 'candidate pairs'],
-              [summary.deterministicStrongPairs, 'deterministic matches'],
-              [summary.aiComparisons, 'AI comparisons'],
-              [summary.clustersCreated, 'clusters created'],
-              [summary.clustersUpdated, 'clusters updated'],
-              [`${summary.durationMs}ms`, 'duration'],
-            ].map(([v, l]) => (
-              <span key={String(l)} className="rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] px-2.5 py-1 text-[var(--text-muted)]">
-                <span className="font-semibold tabular-nums text-[var(--text)]">{v}</span> {l}
-              </span>
-            ))}
-          </div>
-        )}
+        </div>
+        <div className="relative flex items-center gap-2 text-xs text-[var(--text-subtle)]">
+          <IconSparkles size={12} className={analyzing ? 'abh-spin-slow text-[var(--primary-strong)]' : 'text-[var(--primary-strong)]'} />
+          {analyzing ? (
+            <span className="text-[var(--primary-strong)]">Analyzing failures…</span>
+          ) : (
+            <span>
+              {aiMeta?.provider ?? 'AI'}
+              {aiMeta?.model ? <span className="font-mono"> · {aiMeta.model}</span> : null}
+              {aiMeta?.requestCount !== undefined ? ` · ${aiMeta.requestCount} investigations` : ''}
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <MetricPanel index={0} label="Open" value={counts.open ?? 0} accent="orange" onClick={() => toggle('open')} active={statusFilter === 'open'} />
-        <MetricPanel index={1} label="Regressed" value={counts.regressed ?? 0} accent="red" onClick={() => toggle('regressed')} active={statusFilter === 'regressed'} />
-        <MetricPanel index={2} label="Recurring" value={counts.recurring ?? 0} accent="orange" onClick={() => toggle('recurring')} active={statusFilter === 'recurring'} />
-        <MetricPanel index={3} label="Resolved" value={counts.resolved ?? 0} accent="emerald" onClick={() => toggle('resolved')} active={statusFilter === 'resolved'} />
-        <MetricPanel index={4} label="Inconclusive" value={counts.inconclusive ?? 0} accent="neutral" onClick={() => toggle('inconclusive')} active={statusFilter === 'inconclusive'} />
-      </div>
+      {summary && (
+        <p className="abh-fade-up text-xs text-[var(--text-subtle)]">
+          Last analysis: {summary.analyzedRuns} runs · {summary.candidatePairs} candidate pairs ·{' '}
+          {summary.aiComparisons} AI comparisons · {summary.clustersCreated} created · {summary.clustersUpdated} updated ·{' '}
+          {summary.durationMs}ms
+        </p>
+      )}
 
       {loading ? (
         <div className="grid gap-3 md:grid-cols-2">
@@ -362,17 +328,10 @@ function ClusterCard({ c, onOpen }: { c: BugCluster; onOpen: () => void }): JSX.
       {c.rootCauseSummary && (
         <p className="relative mt-2 line-clamp-2 text-xs text-[var(--text-muted)]">{c.rootCauseSummary}</p>
       )}
-      <div className="relative mt-3 grid grid-cols-3 gap-2 text-center">
-        {[
-          [c.occurrenceCount, 'occurrences'],
-          [c.affectedTestCount, 'tests'],
-          [`${Math.round(c.confidence * 100)}%`, 'confidence'],
-        ].map(([v, l]) => (
-          <div key={String(l)} className="rounded-lg bg-[var(--surface-hover)] py-1.5">
-            <div className="text-sm font-semibold tabular-nums text-[var(--text)]">{v}</div>
-            <div className="text-[10px] uppercase tracking-wider text-[var(--text-subtle)]">{l}</div>
-          </div>
-        ))}
+      <div className="relative mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-subtle)]">
+        <span><span className="font-medium tabular-nums text-[var(--text)]">{c.occurrenceCount}</span> occurrences</span>
+        <span><span className="font-medium tabular-nums text-[var(--text)]">{c.affectedTestCount}</span> tests</span>
+        <span><span className="font-medium tabular-nums text-[var(--text)]">{Math.round(c.confidence * 100)}%</span> confidence</span>
       </div>
       <MiniTimeline first={c.firstSeenAt} last={c.lastSeenAt} count={c.occurrenceCount} />
       <div className="relative mt-3 flex items-center justify-between text-xs text-[var(--text-subtle)] group-hover:text-violet-300">

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTestRuns, type TestRunSummary } from '../hooks/useTestRuns.js';
 import { PageHeader } from './shared/PageHeader.js';
-import { MetricPanel } from './shared/MetricPanel.js';
 import { StatusPill, type PillTone } from './shared/StatusPill.js';
 import { IconRefresh, IconChevronRight, IconSpinner, IconList, IconSearch, IconCheck, IconX, IconAlertTriangle, IconSparkles } from './icons.js';
 import { OrbitalEmptyState } from './shared/OrbitalEmptyState.js';
@@ -74,7 +73,6 @@ export function TestRunList({ onSelect, onNavigateToTests }: Props): JSX.Element
 
   const loading = !data && !error;
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
-  const toggle = (s: StatusFilter): void => setStatusFilter((cur) => (cur === s ? 'all' : s));
 
   return (
     <div className="space-y-6">
@@ -92,44 +90,6 @@ export function TestRunList({ onSelect, onNavigateToTests }: Props): JSX.Element
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <MetricPanel index={0} label="Total Runs" value={loading ? '—' : metrics.total} accent="violet" onClick={() => setStatusFilter('all')} active={statusFilter === 'all' && !loading} />
-        <MetricPanel index={1} label="Passed" value={loading ? '—' : metrics.passed} accent="emerald" onClick={() => toggle('passed')} active={statusFilter === 'passed'} />
-        <MetricPanel index={2} label="Failed" value={loading ? '—' : metrics.failed} accent="red" onClick={() => toggle('failed')} active={statusFilter === 'failed'} />
-        <MetricPanel index={3} label="Errors" value={loading ? '—' : metrics.errored} accent="orange" onClick={() => toggle('error')} active={statusFilter === 'error'} />
-        <MetricPanel
-          index={4}
-          label="Avg Duration"
-          value={metrics.avg === null ? '—' : formatDuration(metrics.avg)}
-          accent="cyan"
-        />
-      </div>
-
-      {!loading && metrics.total > 0 && (
-        <div className="abh-card p-4">
-          <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-subtle)]">
-            <span>Outcome mix · this page</span>
-            <span className="tabular-nums">{Math.round((metrics.passed / metrics.total) * 100)}% pass</span>
-          </div>
-          <div className="flex h-2.5 overflow-hidden rounded-full bg-[var(--surface-hover)]">
-            {(['passed', 'failed', 'error'] as const).map((s) => {
-              const n = s === 'passed' ? metrics.passed : s === 'failed' ? metrics.failed : metrics.errored;
-              if (n === 0) return null;
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  aria-label={`Show ${s} runs`}
-                  onClick={() => toggle(s)}
-                  className="abh-grow-x h-full transition-opacity hover:opacity-80"
-                  style={{ width: `${(n / metrics.total) * 100}%`, background: STATUS_COLOR[s] }}
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       <div className="abh-card p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
@@ -143,18 +103,25 @@ export function TestRunList({ onSelect, onNavigateToTests }: Props): JSX.Element
             />
           </div>
           <div role="group" aria-label="Filter by status" className="flex flex-wrap items-center gap-1.5">
-            {(['all', 'passed', 'failed', 'error'] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                aria-pressed={statusFilter === s}
-                onClick={() => setStatusFilter(s)}
-                className="abh-chip"
-              >
-                {s !== 'all' && <span className="h-1.5 w-1.5 rounded-full" style={{ background: STATUS_COLOR[s] }} />}
-                {s === 'all' ? 'All statuses' : s === 'passed' ? 'Passed' : s === 'failed' ? 'Failed' : 'Error'}
-              </button>
-            ))}
+            {(['all', 'passed', 'failed', 'error'] as const).map((s) => {
+              const n = s === 'all' ? metrics.total : s === 'passed' ? metrics.passed : s === 'failed' ? metrics.failed : metrics.errored;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  aria-pressed={statusFilter === s}
+                  onClick={() => setStatusFilter(s)}
+                  className="abh-chip"
+                >
+                  {s !== 'all' && <span className="h-1.5 w-1.5 rounded-full" style={{ background: STATUS_COLOR[s] }} />}
+                  {s === 'all' ? 'All statuses' : s === 'passed' ? 'Passed' : s === 'failed' ? 'Failed' : 'Error'}
+                  {!loading && <span className="tabular-nums text-[var(--text-subtle)]">{n}</span>}
+                </button>
+              );
+            })}
+            {metrics.avg !== null && (
+              <span className="ml-1 text-xs text-[var(--text-subtle)]">avg {formatDuration(metrics.avg)}</span>
+            )}
           </div>
         </div>
 

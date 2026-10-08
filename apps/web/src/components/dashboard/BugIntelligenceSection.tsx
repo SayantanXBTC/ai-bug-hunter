@@ -58,7 +58,7 @@ export function BugIntelligenceSection({ onOpenBugs }: BugIntelligenceSectionPro
   }, []);
 
   return (
-    <section className="abh-card abh-glow-border flex flex-col p-5 sm:p-6">
+    <section className="abh-card flex flex-col p-5 sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary-strong)]">

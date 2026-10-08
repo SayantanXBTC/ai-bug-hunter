@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { ThemedPageHeader } from './shared/ThemedPageHeader.js';
 import { IconPlus, IconRefresh, IconChevronRight, IconTarget, IconPlay, IconXMark, IconSpinner, IconCheck } from './icons.js';
 import { entryFor } from './navigation.js';
-import { MetricPanel } from './shared/MetricPanel.js';
 
 interface CampaignSummary {
   id: string;
@@ -198,9 +197,6 @@ export function RegressionCampaigns({
       ? stageFromStatus(detail.campaign.status)
       : 'SELECT';
 
-  const finished = (items ?? []).filter((c) => c.quality);
-  const healthy = finished.filter((c) => c.quality === 'healthy').length;
-
   return (
     <div className="space-y-6">
       <ThemedPageHeader
@@ -224,20 +220,6 @@ export function RegressionCampaigns({
       />
 
       <Pipeline current={currentStage} />
-
-      {items && items.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <MetricPanel index={0} label="Campaigns" value={items.length} accent="violet" />
-          <MetricPanel index={1} label="Awaiting run" value={items.filter((c) => c.status === 'queued').length} accent="cyan" />
-          <MetricPanel index={2} label="Healthy verdicts" value={healthy} accent="emerald" />
-          <MetricPanel
-            index={3}
-            label="Tests executed"
-            value={items.reduce((n, c) => n + c.passed_runs + c.failed_runs + c.error_runs, 0)}
-            accent="orange"
-          />
-        </div>
-      )}
 
       {creating && (
         <section

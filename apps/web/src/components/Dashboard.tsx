@@ -1,25 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { DashboardOverviewResponse } from '@ai-bug-hunter/shared';
 import { useAuth } from '../hooks/useAuth.js';
-import {
-  IconActivity,
-  IconBug,
-  IconCheckCircle,
-  IconClock,
-  IconLayers,
-  IconRadar,
-  IconRefresh,
-  IconSparkles,
-} from './icons.js';
+import { IconBug, IconCheckCircle, IconClock, IconRadar, IconRefresh } from './icons.js';
 import { formatPercent, formatDuration } from '../lib/format.js';
 import { MetricCard } from './dashboard/MetricCard.js';
 import { QualityScoreCard } from './dashboard/QualityScoreCard.js';
 import { TrendChartSection } from './dashboard/TrendChart.js';
 import { RecentFailures } from './dashboard/RecentFailures.js';
 import { BugIntelligenceSection } from './dashboard/BugIntelligenceSection.js';
-import { AiActivitySection } from './dashboard/AiActivitySection.js';
-import { RecentRunsTable } from './dashboard/RecentRunsTable.js';
-import { QuickActions } from './dashboard/QuickActions.js';
 import { SkeletonCard } from './dashboard/Skeleton.js';
 import { DashboardError } from './dashboard/DashboardError.js';
 import { GettingStarted } from './dashboard/GettingStarted.js';
@@ -151,14 +139,6 @@ export function Dashboard({ onNavigate }: DashboardProps = {}): JSX.Element {
   // The API surfaces "insufficient" indirectly via sampleSize/warning; we treat sampleSize === 0 as insufficient.
   const qualityInsufficient = overview ? overview.qualityScore.sampleSize === 0 : false;
 
-  const investigationCount = (() => {
-    if (!overview) return 0;
-    const extended = overview.aiMetrics as unknown as {
-      byOperation?: Record<string, { count: number }>;
-    };
-    const inv = extended.byOperation?.investigation?.count;
-    return typeof inv === 'number' ? inv : overview.aiMetrics.requestCount;
-  })();
 
   const summary = (() => {
     if (!overview) return null;
@@ -180,63 +160,48 @@ export function Dashboard({ onNavigate }: DashboardProps = {}): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <header className="abh-card abh-fade-up relative overflow-hidden p-6 sm:p-7">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(500px 220px at 0% 0%, var(--primary-soft), transparent 70%), radial-gradient(400px 200px at 100% 100%, var(--secondary-soft), transparent 70%)',
-          }}
-        />
-        <svg aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-56 w-56 opacity-40" viewBox="0 0 200 200">
-          <circle cx="100" cy="100" r="80" fill="none" stroke="var(--primary)" strokeOpacity="0.4" strokeDasharray="2 8" className="abh-spin-slow" style={{ transformOrigin: '100px 100px' }} />
-          <circle cx="100" cy="100" r="55" fill="none" stroke="var(--secondary)" strokeOpacity="0.35" strokeDasharray="1 6" className="abh-spin-slow" style={{ transformOrigin: '100px 100px', animationDirection: 'reverse' }} />
-          <circle cx="180" cy="100" r="3" fill="var(--primary)" className="abh-spin-slow" style={{ transformOrigin: '100px 100px' }} />
-        </svg>
-        <div className="relative flex flex-wrap items-end justify-between gap-5">
-          <div className="min-w-0 max-w-2xl">
-            <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.28em] text-[var(--text-subtle)]">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)] opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--success)]" />
-              </span>
-              QA Overview · live
-            </div>
-            <h1 className="mt-2 text-[28px] leading-tight tracking-tight text-[var(--text)] sm:text-[32px]" style={{ fontFamily: 'var(--font-heading)' }}>
-              {greeting()}, <span className="abh-gradient-text">{displayName(auth.user?.email)}</span>
-            </h1>
-            <p className="mt-2 text-sm text-[var(--text-muted)]">
-              {summary ?? 'Application quality, test health, and AI-assisted defect intelligence.'}
-            </p>
+      <header className="abh-fade-up flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0 max-w-2xl">
+          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.24em] text-[var(--text-subtle)]">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)] opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--success)]" />
+            </span>
+            QA Overview
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {apps.length > 0 && (
-              <>
-                <label htmlFor="app-filter" className="sr-only">Filter by application</label>
-                <select
-                  id="app-filter"
-                  value={applicationId}
-                  onChange={(e) => setApplicationId(e.target.value)}
-                  className="abh-input w-auto"
-                >
-                  <option value="">All applications</option>
-                  {apps.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </select>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => setRefreshTick((t) => t + 1)}
-              disabled={refreshing}
-              className="abh-btn abh-btn-ghost"
-            >
-              <IconRefresh size={14} className={refreshing ? 'animate-spin' : undefined} />
-              Refresh
-            </button>
-          </div>
+          <h1 className="mt-1 text-[26px] leading-tight tracking-tight text-[var(--text)]" style={{ fontFamily: 'var(--font-heading)' }}>
+            {greeting()}, {displayName(auth.user?.email)}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">
+            {summary ?? 'Application quality, test health, and AI-assisted defect intelligence.'}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {apps.length > 0 && (
+            <>
+              <label htmlFor="app-filter" className="sr-only">Filter by application</label>
+              <select
+                id="app-filter"
+                value={applicationId}
+                onChange={(e) => setApplicationId(e.target.value)}
+                className="abh-input w-auto"
+              >
+                <option value="">All applications</option>
+                {apps.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => setRefreshTick((t) => t + 1)}
+            disabled={refreshing}
+            className="abh-btn abh-btn-ghost"
+            aria-label="Refresh"
+          >
+            <IconRefresh size={14} className={refreshing ? 'animate-spin' : undefined} />
+          </button>
         </div>
       </header>
 
@@ -266,8 +231,8 @@ export function Dashboard({ onNavigate }: DashboardProps = {}): JSX.Element {
           <div className="lg:col-span-1">
             <SkeletonCard />
           </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:col-span-2">
-            {[0, 1, 2, 3, 4, 5].map((i) => <SkeletonCard key={i} />)}
+          <div className="grid grid-cols-2 gap-4 lg:col-span-2">
+            {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
           </div>
         </div>
       ) : overview ? (
@@ -275,7 +240,7 @@ export function Dashboard({ onNavigate }: DashboardProps = {}): JSX.Element {
           <div className="lg:col-span-1">
             <QualityScoreCard quality={overview.qualityScore} insufficient={qualityInsufficient} />
           </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:col-span-2">
+          <div className="grid grid-cols-2 gap-4 lg:col-span-2">
             <MetricCard
               index={0}
               label="Pass Rate"
@@ -316,27 +281,6 @@ export function Dashboard({ onNavigate }: DashboardProps = {}): JSX.Element {
               onClick={() => onNavigate?.('test-runs')}
               actionLabel="Runs"
             />
-            <MetricCard
-              index={4}
-              label="Applications"
-              value={overview.applications.count}
-              hint="registered"
-              icon={<IconLayers size={16} />}
-              color="#8b5cf6"
-              onClick={() => onNavigate?.('applications')}
-              actionLabel="Apps"
-            />
-            <MetricCard
-              index={5}
-              label="AI Investigations"
-              value={investigationCount}
-              hint={overview.aiMetrics.provider ?? 'AI-assisted'}
-              icon={<IconSparkles size={16} />}
-              color="#a855f7"
-              aiAccent
-              onClick={() => onNavigate?.('bugs')}
-              actionLabel="Bugs"
-            />
           </div>
         </div>
       ) : null}
@@ -350,34 +294,6 @@ export function Dashboard({ onNavigate }: DashboardProps = {}): JSX.Element {
         </div>
       )}
 
-      {overview && (
-        <div className="grid gap-4 lg:grid-cols-3 [&>*]:min-w-0">
-          <div className="lg:col-span-2">
-            <RecentRunsTable onOpenRun={() => onNavigate?.('test-runs')} />
-          </div>
-          <AiActivitySection aiMetrics={overview.aiMetrics} />
-        </div>
-      )}
-
-      {overview && (
-        <QuickActions
-          canWrite={canWrite}
-          onDiscover={() => onNavigate?.('applications', 'add-application')}
-          onGenerate={() => onNavigate?.('tests', 'generate-tests')}
-          onRun={() => onNavigate?.('tests')}
-          onRegression={() => onNavigate?.('regression', 'create-campaign')}
-        />
-      )}
-
-      {overview && (
-        <div className="flex items-center gap-2 text-xs text-[var(--text-subtle)]">
-          <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-violet-500" />
-          <span className="flex items-center gap-1">
-            <IconSparkles size={12} className="text-violet-500" /> indicates AI-assisted signal
-            <IconActivity size={12} className="ml-3" /> click any metric to open its page
-          </span>
-        </div>
-      )}
     </div>
   );
 }
