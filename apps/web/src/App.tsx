@@ -17,6 +17,7 @@ import { TopBar } from './components/shared/TopBar.js';
 import { CommandPalette } from './components/shared/CommandPalette.js';
 import { WelcomeTour } from './components/shared/WelcomeTour.js';
 import { PageErrorBoundary } from './components/shared/PageErrorBoundary.js';
+import { ServerWaking } from './components/shared/ServerWaking.js';
 import type { PageAction, ViewId } from './components/navigation.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useTheme } from './lib/theme.js';
@@ -103,15 +104,10 @@ export function App(): JSX.Element {
     setTourSeen(true);
   }, [setTourSeen]);
 
-  if (auth.loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--bg)]">
-        <span
-          className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--border)]"
-          style={{ borderTopColor: 'var(--primary)' }}
-        />
-      </div>
-    );
+  // Only app pages need to wait for the session check. The landing and login
+  // pages render straight away, so a sleeping backend no longer blocks first paint.
+  if (auth.loading && route.screen === 'app') {
+    return <ServerWaking />;
   }
 
   if (route.screen === 'login' && !auth.user) {

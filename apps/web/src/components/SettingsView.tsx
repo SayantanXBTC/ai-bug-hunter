@@ -5,7 +5,7 @@ import { ThemedPageHeader } from './shared/ThemedPageHeader.js';
 import { useTheme } from '../lib/theme.js';
 import { IconCog, IconPalette, IconSparkles, IconUser, IconCodeBrackets, IconDatabase, IconRocket, IconLogout } from './icons.js';
 import { entryFor } from './navigation.js';
-import { initialsFrom } from './shared/TopBar.js';
+import { UserAvatar } from './shared/UserAvatar.js';
 import type { ReactNode } from 'react';
 
 interface Props {
@@ -92,15 +92,11 @@ export function SettingsView({ user, onLogout, onOpenTour }: Props): JSX.Element
         <div className="relative flex flex-wrap items-center gap-5">
           <div className="relative">
             <span aria-hidden className="absolute inset-0 rounded-2xl blur-xl" style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', opacity: 0.5 }} />
-            <span
-              className="relative flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-semibold text-white"
-              style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
-            >
-              {initialsFrom(user.email)}
-            </span>
+            <UserAvatar user={user} size={64} rounded="rounded-2xl" className="relative" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-lg font-semibold text-[var(--text)]">{user.email}</div>
+            <div className="truncate text-lg font-semibold text-[var(--text)]">{user.displayName ?? user.email}</div>
+            {user.displayName && <div className="truncate text-sm text-[var(--text-muted)]">{user.email}</div>}
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
               <span className="rounded-md bg-[var(--primary-soft)] px-2 py-0.5 font-semibold uppercase tracking-wider text-[var(--primary-strong)]">
                 {roleLabel}

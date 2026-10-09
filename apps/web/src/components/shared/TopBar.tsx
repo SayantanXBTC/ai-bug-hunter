@@ -4,6 +4,9 @@ import { ThemeToggle } from './ThemeToggle.js';
 import { NotificationsPanel } from './NotificationsPanel.js';
 import { IconChevronDown, IconChevronRight, IconCog, IconHelp, IconLogout, IconMenu, IconSearch } from '../icons.js';
 import { NAV_GROUP_LABEL, entryFor, type ViewId } from '../navigation.js';
+import { UserAvatar } from './UserAvatar.js';
+
+export { initialsFrom } from './UserAvatar.js';
 
 interface TopBarProps {
   user: AuthUser;
@@ -13,17 +16,6 @@ interface TopBarProps {
   onOpenPalette: () => void;
   onOpenTour: () => void;
   onOpenMobileNav: () => void;
-}
-
-export function initialsFrom(email: string): string {
-  const local = email.split('@')[0] ?? email;
-  const parts = local.split(/[._-]+/).filter(Boolean);
-  if (parts.length >= 2 && parts[0] && parts[1]) {
-    const a = parts[0][0] ?? '';
-    const b = parts[1][0] ?? '';
-    return (a + b).toUpperCase();
-  }
-  return local.slice(0, 2).toUpperCase();
 }
 
 const ROLE_LABEL: Record<AuthUser['role'], string> = {
@@ -83,7 +75,6 @@ export function TopBar({
   onOpenTour,
   onOpenMobileNav,
 }: TopBarProps): JSX.Element {
-  const initials = initialsFrom(user.email);
   const entry = entryFor(view);
   const [notifOpen, setNotifOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -206,15 +197,9 @@ export function TopBar({
             aria-label="Account menu"
             className="flex h-9 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] pl-1 pr-2 transition-all hover:border-[var(--border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
           >
-            <span
-              aria-hidden
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-semibold uppercase tracking-wider text-white"
-              style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
-            >
-              {initials}
-            </span>
+            <UserAvatar user={user} size={28} />
             <span className="hidden text-left leading-tight xl:block">
-              <span className="block max-w-[160px] truncate text-xs text-[var(--text)]">{user.email}</span>
+              <span className="block max-w-[160px] truncate text-xs text-[var(--text)]">{user.displayName ?? user.email}</span>
               <span className="block text-[10px] uppercase tracking-wider text-[var(--primary-strong)]">
                 {ROLE_LABEL[user.role]}
               </span>
@@ -231,10 +216,18 @@ export function TopBar({
               className="abh-card abh-scale-in absolute right-0 top-11 z-50 w-64 overflow-hidden p-1.5"
               style={{ background: 'var(--surface-elevated)' }}
             >
-              <div className="px-3 py-2.5">
-                <div className="truncate text-sm text-[var(--text)]">{user.email}</div>
-                <div className="mt-1 inline-flex rounded-md bg-[var(--primary-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--primary-strong)]">
-                  {ROLE_LABEL[user.role]}
+              <div className="flex items-center gap-3 px-3 py-2.5">
+                <UserAvatar user={user} size={36} rounded="rounded-xl" />
+                <div className="min-w-0">
+                  {user.displayName && (
+                    <div className="truncate text-sm font-medium text-[var(--text)]">{user.displayName}</div>
+                  )}
+                  <div className={`truncate ${user.displayName ? 'text-xs text-[var(--text-muted)]' : 'text-sm text-[var(--text)]'}`}>
+                    {user.email}
+                  </div>
+                  <div className="mt-1 inline-flex rounded-md bg-[var(--primary-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--primary-strong)]">
+                    {ROLE_LABEL[user.role]}
+                  </div>
                 </div>
               </div>
               <div className="my-1 h-px bg-[var(--border)]" />

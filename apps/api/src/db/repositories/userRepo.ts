@@ -76,6 +76,23 @@ export async function linkFirebaseUid(
   );
 }
 
+/** Refresh the Google profile photo/name on each Google sign-in (they can change). */
+export async function updateGoogleProfile(
+  exec: Executor,
+  userId: string,
+  avatarUrl: string | null,
+  displayName: string | null,
+): Promise<void> {
+  await exec.query(
+    `UPDATE users
+       SET avatar_url = COALESCE($1, avatar_url),
+           display_name = COALESCE($2, display_name),
+           updated_at = NOW()
+     WHERE id = $3`,
+    [avatarUrl, displayName, userId],
+  );
+}
+
 export async function findUserById(exec: Executor, id: string): Promise<UserRow | null> {
   const { rows } = await exec.query<UserRow>(`SELECT * FROM users WHERE id = $1`, [id]);
   return rows[0] ?? null;

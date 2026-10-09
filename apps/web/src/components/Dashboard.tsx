@@ -12,6 +12,7 @@ import { SkeletonCard } from './dashboard/Skeleton.js';
 import { DashboardError } from './dashboard/DashboardError.js';
 import { GettingStarted } from './dashboard/GettingStarted.js';
 import type { PageAction, ViewId } from './navigation.js';
+import { UserAvatar, firstNameOf } from './shared/UserAvatar.js';
 
 interface AppOption {
   id: string;
@@ -26,13 +27,6 @@ function greeting(): string {
   if (h < 12) return 'Good morning';
   if (h < 18) return 'Good afternoon';
   return 'Good evening';
-}
-
-function displayName(email: string | undefined): string {
-  if (!email) return 'there';
-  const local = email.split('@')[0] ?? '';
-  const first = local.split(/[._\-+0-9]+/).filter(Boolean)[0] ?? local;
-  return first ? first.charAt(0).toUpperCase() + first.slice(1) : 'there';
 }
 
 interface DashboardProps {
@@ -169,9 +163,14 @@ export function Dashboard({ onNavigate }: DashboardProps = {}): JSX.Element {
             </span>
             QA Overview
           </div>
-          <h1 className="mt-1 text-[26px] leading-tight tracking-tight text-[var(--text)]" style={{ fontFamily: 'var(--font-heading)' }}>
-            {greeting()}, {displayName(auth.user?.email)}
-          </h1>
+          <div className="mt-1.5 flex items-center gap-3">
+            {auth.user && (
+              <UserAvatar user={auth.user} size={40} rounded="rounded-full" className="ring-2 ring-[var(--border-strong)]" />
+            )}
+            <h1 className="text-[26px] leading-tight tracking-tight text-[var(--text)]" style={{ fontFamily: 'var(--font-heading)' }}>
+              {greeting()}, {firstNameOf(auth.user)}
+            </h1>
+          </div>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
             {summary ?? 'Application quality, test health, and AI-assisted defect intelligence.'}
           </p>

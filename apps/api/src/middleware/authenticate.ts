@@ -27,7 +27,13 @@ export const authenticate: RequestHandler = async (req, _res, next) => {
     if (!token) return next();
     const user = await verifySession(pool, token);
     if (user) {
-      req.user = { id: user.id, email: user.email, role: user.role };
+      req.user = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        avatarUrl: user.avatar_url,
+        displayName: user.display_name,
+      };
     }
     next();
   } catch (err) {

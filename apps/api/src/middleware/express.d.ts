@@ -4,7 +4,15 @@ declare global {
   namespace Express {
     interface Request {
       requestId?: string;
-      user?: { id: string; email: string; role: 'admin' | 'qa_engineer' | 'viewer' } | undefined;
+      user?:
+        | {
+            id: string;
+            email: string;
+            role: 'admin' | 'qa_engineer' | 'viewer';
+            avatarUrl?: string | null;
+            displayName?: string | null;
+          }
+        | undefined;
       ciToken?: { id: string; applicationId: string | null } | undefined;
     }
   }

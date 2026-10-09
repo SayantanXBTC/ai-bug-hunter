@@ -8,6 +8,7 @@ import {
   findUserByEmail,
   findUserByFirebaseUid,
   linkFirebaseUid,
+  updateGoogleProfile,
   updateLastLogin,
   type UserRole,
 } from '../db/repositories/userRepo.js';
@@ -169,6 +170,8 @@ authRouter.post(
 
       if (user && !user.firebase_uid) {
         await linkFirebaseUid(pool, user.id, firebaseUid, avatarUrl, displayName);
+      } else if (user) {
+        await updateGoogleProfile(pool, user.id, avatarUrl, displayName);
       }
 
       if (!user) {
@@ -189,7 +192,15 @@ authRouter.post(
       const session = await createSession(pool, user.id, req);
       setSessionCookie(res, session.token);
       await updateLastLogin(pool, user.id);
-      res.json({ user: { id: user.id, email: user.email, role: user.role } });
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          avatarUrl: avatarUrl ?? user.avatar_url,
+          displayName: displayName ?? user.display_name,
+        },
+      });
     } catch (err) {
       if (err instanceof FirebaseVerifyError) {
         // Server-side setup problem, not the user's fault. Log the detail,

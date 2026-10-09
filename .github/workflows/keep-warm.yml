@@ -1,0 +1,19 @@
+name: Keep API warm
+
+# Render's free plan puts the API to sleep after ~15 minutes without traffic,
+# and waking it takes 1-2 minutes. Pinging the health endpoint every 10
+# minutes keeps it awake. GitHub may delay scheduled runs by a few minutes.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping API health
+        run: |
+          curl --silent --show-error --fail --retry 3 --retry-delay 20 --max-time 120 \
+            https://ai-bug-hunter-j94g.onrender.com/api/health
